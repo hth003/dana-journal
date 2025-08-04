@@ -1,0 +1,40 @@
+[project]
+name = "journal-vault"
+version = "0.1.0"
+description = "A privacy-first desktop journaling application with local AI insights"
+authors = [
+    {name = "AI Journal Vault Team"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "flet>=0.24.1",
+    "pydantic>=2.8.0",
+    "python-dateutil>=2.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "black>=24.0.0",
+    "ruff>=0.5.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

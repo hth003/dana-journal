@@ -66,11 +66,18 @@
 ai-journal-vault/
 ├── pyproject.toml              # uv configuration
 ├── src/journal_vault/
-│   ├── main.py                 # Application entry point
-│   ├── ui/                     # Flet UI components
-│   ├── ai/                     # SmolLM integration
-│   ├── storage/                # File management
-│   └── config/                 # App settings
+│   ├── __init__.py
+│   ├── main.py                 # Application entry point + main app class
+│   ├── ui/
+│   │   ├── __init__.py
+│   │   ├── theme.py            # Theme system and styling
+│   │   └── components/         # UI components (calendar, editor, etc.)
+│   ├── storage/
+│   │   └── __init__.py         # File management
+│   ├── ai/
+│   │   └── __init__.py         # Qwen2.5-3B integration
+│   └── config/
+│       └── __init__.py         # App settings
 ├── models/qwen2.5-3b-q4/       # Bundled AI model (quantized)
 └── tests/                      # Test suite
 ```
