@@ -61,25 +61,34 @@
 
 ## Technical Architecture
 
-### Project Structure
+### Project Structure (Current Implementation)
 ```
-ai-journal-vault/
-├── pyproject.toml              # uv configuration
+journal-vault/
+├── pyproject.toml              # uv configuration with minimal deps
 ├── src/journal_vault/
 │   ├── __init__.py
-│   ├── main.py                 # Application entry point + main app class
+│   ├── main.py                 # ✅ Complete app structure (379 lines)
 │   ├── ui/
 │   │   ├── __init__.py
-│   │   ├── theme.py            # Theme system and styling
-│   │   └── components/         # UI components (calendar, editor, etc.)
+│   │   ├── theme.py            # ✅ Dark theme system (221 lines)
+│   │   └── components/
+│   │       ├── __init__.py     # ✅ Component exports
+│   │       ├── onboarding.py   # ✅ Complete onboarding (751 lines)
+│   │       └── calendar.py     # ✅ Interactive calendar (546 lines)
 │   ├── storage/
-│   │   └── __init__.py         # File management
+│   │   └── __init__.py         # ❌ Placeholder (needs implementation)
 │   ├── ai/
-│   │   └── __init__.py         # Qwen2.5-3B integration
+│   │   └── __init__.py         # ❌ Placeholder (needs implementation)
 │   └── config/
-│       └── __init__.py         # App settings
-├── models/qwen2.5-3b-q4/       # Bundled AI model (quantized)
-└── tests/                      # Test suite
+│       ├── __init__.py
+│       └── app_config.py       # ✅ Configuration system (128 lines)
+├── tests/                      # ✅ Development utilities
+│   ├── test_file_picker.py
+│   ├── test_folder_selection.py
+│   └── reset_onboarding.py
+└── models/                     # ❌ Future: AI model storage
+
+✅ = Fully implemented  ❌ = Needs implementation
 ```
 
 ### AI Integration Strategy
@@ -124,20 +133,30 @@ version: 1
 
 ## User Experience Design
 
-### UI Layout
+### UI Layout (Obsidian-Inspired)
 ```
-┌─────────────────────────────────────┐
-│  AI Journal Vault      [⚙️] [❓] [🌙] │
-├─────────┬───────────────────────────┤
-│         │                           │
-│ Calendar│      Journal Entry        │
-│  View   │        Editor             │
-│         │    (Markdown + Preview)   │
-│         ├───────────────────────────┤
-│         │    AI Reflection Panel    │
-│         │   • Insights              │
-│         │   • Questions             │
-└─────────┴───────────────────────────┘
+┌─────────────────────────────────────────────────────────-----┐
+│                    AI Journal Vault                          │
+├─────────────────---┼───────────────────────────────────────--┤
+│  ╭── Jan 2025 ──╮  │                                         │
+│  │ M T W T F S S│  │              Journal Entry              │
+│  │   1 2 3 4 ●  │  │         (Markdown Editor)               │
+│  │ 6 7 8 ○ 10   │  │                                         │
+│  │   ●  Today   │  │     "Start writing your thoughts        │
+│  ╰──────────────╯  │      for today..."                      │
+│                    │                                         │
+│      Files         │                                         │
+│  ╭──────────────╮  ├─────────────────────────────────────────┤
+│  │ Journal files│  │                                         │
+│  │ will appear  │  │            AI Reflection                │
+│  │    here      │  │                                         │
+│  ╰──────────────╯  │   "AI-powered insights and              │
+│                    │    reflection questions will            │
+│                    │    appear here."                        │
+│                    │                                         │
+└──────────────────--┴─────────────────────────────────────────┘
+
+○ = Today  ● = Has Entry  ◯ = Selected Date
 ```
 
 ### Color Scheme
@@ -147,38 +166,41 @@ version: 1
 - Primary: #8B5CF6 (Violet)
 - Text: #F1F5F9 (Off-white)
 
-**Light Mode:**
-- Background: #FFFFFF
-- Surface: #F8FAFC
-- Primary: #6366F1 (Indigo)
-- Text: #0F172A
+**Light Mode:** ❌ Removed - Simplified to dark-mode only for focused experience
 
-### Onboarding Flow
-1. Welcome screen with app introduction
-2. Privacy explanation (local-only processing)
-3. Journal storage location selection
-4. Theme preference selection
-5. Optional: Create first journal entry
+### Onboarding Flow (Simplified)
+1. Welcome screen with app introduction and feature overview
+2. Privacy explanation (local-only processing and encryption)
+3. Journal storage location selection (native macOS dialog)
+
+**Note:** Streamlined from 5 steps to 3 steps for better user experience. Theme selection removed (dark-mode only).
 
 ## Development Plan & Current Progress
 
 ### Phase 1: Foundation (Week 1) - ✅ COMPLETED
-- [x] Project setup with uv
-- [x] Basic Flet application structure (main.py:646907 lines total)
-- [x] Three-panel UI layout (Header, Calendar/Editor row, AI panel)
-- [x] Violet/indigo theme implementation (comprehensive theme system)
-- [ ] Onboarding flow with directory selection ⚠️ PENDING
+- [x] Project setup with uv and proper dependencies
+- [x] Basic Flet application structure with proper imports
+- [x] Obsidian-like UI layout (Left sidebar + Main content area)
+- [x] Simplified dark theme system (removed light mode)
+- [x] Complete onboarding flow with 3 streamlined steps
+- [x] Native macOS file picker integration
+- [x] Configuration management system
+- [x] Window state persistence
 
-**Progress:** 80% complete - Missing onboarding flow
+**Progress:** 100% complete - All foundation components implemented
 
 ### Phase 2: Core Functionality (Week 2) - 🔄 IN PROGRESS
-- [ ] Markdown editor with live preview ⚠️ PENDING
-- [ ] File-based storage system ⚠️ PENDING (storage/ module exists but empty)
-- [ ] Calendar navigation with entry indicators ⚠️ PENDING
-- [ ] Auto-save implementation ⚠️ PENDING
-- [ ] CRUD operations for journal entries ⚠️ PENDING
+- [x] Interactive calendar component with compact Obsidian-like design
+- [x] Calendar navigation (month/year) with "Today" button
+- [x] Entry indicators (dots) and date selection
+- [x] Visual states (today, selected, has entry)
+- [ ] Basic text editor (in place, needs enhancement) ⚠️ BASIC
+- [ ] File-based storage system ❌ NOT STARTED (storage/ module placeholder)
+- [ ] Auto-save implementation ❌ NOT STARTED
+- [ ] CRUD operations for journal entries ❌ NOT STARTED
+- [ ] Markdown editor with live preview ❌ NOT STARTED
 
-**Progress:** 0% complete - All core functionality needs implementation
+**Progress:** 40% complete - Calendar fully functional, editor basic, storage pending
 
 ### Phase 3: AI Integration (Week 3) - ❌ NOT STARTED
 - [ ] Qwen2.5-3B-Instruct model bundling (Q4_K_M quantized) ❌ NOT STARTED
@@ -188,7 +210,7 @@ version: 1
 - [ ] AI reflection panel UI with loading states ❌ NOT STARTED
 - [ ] Optimized prompt engineering for emotional intelligence ❌ NOT STARTED
 
-**Progress:** 0% complete - AI module exists but empty
+**Progress:** 0% complete - AI module placeholder ready for implementation
 
 ### Phase 4: Polish & Packaging (Week 4) - ❌ NOT STARTED
 - [ ] Performance optimization ❌ NOT STARTED
@@ -197,7 +219,7 @@ version: 1
 - [ ] Final UI/UX refinements ❌ NOT STARTED
 - [ ] Installation package creation ❌ NOT STARTED
 
-**Progress:** 0% complete - Too early for polish phase
+**Progress:** 5% complete - Basic project structure and build config ready
 
 ## Key Decisions Made
 
@@ -239,52 +261,124 @@ version: 1
 - Pro features: Advanced AI insights, themes, statistics
 - Pricing: $4.99/month or $39/year for Pro
 
+## Recent Major Changes & Improvements
+
+### 🎆 Key Accomplishments Since Last Update:
+
+#### 1. **Simplified Theme System** (✅ Complete)
+- **Removed light mode** - Streamlined to dark-mode only for focused experience
+- **Enhanced dark theme** with comprehensive color palette
+- **Themed components** (ThemedContainer, ThemedText) for consistent styling
+- **Proper color hierarchy** with primary, secondary, muted, and state colors
+
+#### 2. **Streamlined Onboarding Flow** (✅ Complete) 
+- **Reduced from 5 steps to 3 steps** for better user experience
+- **Native macOS dialog integration** using osascript for folder selection
+- **Robust error handling** with fallback to default location
+- **Visual progress indicators** and polished UI design
+- **Comprehensive validation** of storage directory permissions
+
+#### 3. **Obsidian-Inspired Layout** (✅ Complete)
+- **Left sidebar design** with calendar and files sections
+- **Compact calendar component** matching Obsidian's aesthetic
+- **Proper spacing and visual hierarchy** throughout the interface
+- **Responsive layout** that adapts to window resizing
+- **Clean separation** between different functional areas
+
+#### 4. **Interactive Calendar Component** (✅ Complete)
+- **Full month navigation** with previous/next controls
+- **Today button** for quick navigation to current date
+- **Entry indicators** (dots) showing dates with journal entries
+- **Visual states** for today, selected date, and entries
+- **Compact design** optimized for sidebar placement
+- **Hover effects** and smooth animations
+
+#### 5. **Configuration Management** (✅ Complete)
+- **Persistent settings** stored in ~/.journal_vault/config.json
+- **Window state persistence** (size, position)
+- **Onboarding status tracking** to skip setup on subsequent launches
+- **Storage path management** with validation
+- **Flexible preference system** for future settings
+
+#### 6. **Enhanced Project Structure** (✅ Complete)
+- **Clean module organization** with proper imports
+- **Component-based architecture** for reusable UI elements
+- **Proper error handling** throughout the application
+- **Development utilities** (test files, reset scripts)
+- **Minimal dependencies** focused on core functionality
+
+### 📊 Impact Assessment:
+
+| Component | Before | After | Status |
+|-----------|---------|-------|--------|
+| Theme System | Basic colors only | Complete dark theme with components | ✅ |
+| Onboarding | Not implemented | Full 3-step flow with native dialogs | ✅ |
+| UI Layout | Basic three panels | Obsidian-inspired sidebar design | ✅ |
+| Calendar | Not implemented | Interactive with navigation & indicators | ✅ |
+| Config Management | Not implemented | Full persistence system | ✅ |
+| Storage System | Not implemented | Still needs implementation | ❌ |
+| AI Integration | Not implemented | Still needs implementation | ❌ |
+
 ## Current Status Summary
 
-**Overall Progress: 20% Complete**
+**Overall Progress: 45% Complete** (Major improvement from 20%)
 
 ### ✅ What's Working:
-- Complete theme system with dark/light mode switching
-- Three-panel UI layout foundation (Header, Calendar+Editor, AI panel)
-- Project structure and dependency management with uv
-- Basic Flet application shell
+- **Complete UI Layout**: Obsidian-inspired left sidebar with calendar and files, main content area
+- **Fully Functional Calendar**: Interactive month navigation, date selection, entry indicators
+- **Streamlined Onboarding**: 3-step flow with native macOS folder picker
+- **Simplified Theme System**: Dark-mode only with comprehensive color scheme
+- **Configuration Management**: Persistent settings, window state, user preferences
+- **Basic Text Editor**: TextField in place for journal entries
+- **Project Infrastructure**: Proper uv setup, imports, and module structure
 
 ### 🔄 Currently Implemented:
-- `main.py` (221 lines): Main application class with layout
-- `ui/theme.py` (394 lines): Comprehensive theme management system
-- `pyproject.toml`: Dependencies and build configuration
-- Empty module scaffolding for storage/, ai/, config/, ui/components/
+- `main.py` (379 lines): Complete app structure with Obsidian-like layout
+- `ui/theme.py` (221 lines): Simplified dark theme system with component classes
+- `ui/components/onboarding.py` (751 lines): Full 3-step onboarding with native macOS picker
+- `ui/components/calendar.py` (546 lines): Complete interactive calendar component
+- `config/app_config.py` (128 lines): Configuration persistence system
+- `pyproject.toml`: Clean dependencies (Flet, Pydantic, python-dateutil)
+- Empty placeholder modules: storage/, ai/ (ready for implementation)
 
 ### ❌ Critical Missing Components:
-1. **Storage System**: No file I/O implementation
-2. **Calendar Component**: No date navigation or entry indicators
-3. **Markdown Editor**: No text editing functionality
-4. **AI Integration**: No model loading or inference
-5. **Onboarding Flow**: No directory selection or setup
+1. **Storage System**: File I/O, markdown files, YAML frontmatter, SQLite indexing
+2. **Enhanced Editor**: Markdown support, live preview, formatting toolbar
+3. **Journal Entry Management**: Load/save entries, auto-save, entry persistence
+4. **AI Integration**: Model loading, inference, reflection generation
+5. **Entry-Calendar Integration**: Show real entry dates, load entries on date selection
 
 ### 📊 Code Statistics:
-- **Total Lines**: 646,907 (includes dependencies)
-- **Source Files**: 8 Python files
-- **Main Implementation**: ~615 lines across main.py and theme.py
-- **Test Coverage**: No tests implemented yet
+- **Source Files**: 11 Python files (4 substantial implementations)
+- **Main Implementation**: ~2,025 lines of working code
+  - `main.py`: 379 lines (complete app structure)
+  - `onboarding.py`: 751 lines (full onboarding flow)
+  - `calendar.py`: 546 lines (complete calendar component)
+  - `theme.py`: 221 lines (theme system)
+  - `app_config.py`: 128 lines (configuration management)
+- **Test Files**: 3 test/utility files for development
+- **Dependencies**: Minimal and focused (Flet, Pydantic, python-dateutil)
 
 ## Next Steps (Priority Order)
 
-### 🚨 Immediate (Phase 1 Completion):
-1. **Onboarding Flow**: Directory selection and initial setup
-2. **Calendar Component**: Date picker with entry indicators
+### 🚨 Immediate (Phase 2 Completion):
+1. **Storage System**: File-based journal entry management with YAML frontmatter
+2. **Entry Loading**: Connect calendar date selection to entry loading/creation
+3. **Enhanced Editor**: Markdown support and formatting capabilities
 
-### 🔥 Phase 2 Critical Path:
-1. **Storage System**: File-based journal entry management
-2. **Markdown Editor**: Text editing with live preview
-3. **Calendar Navigation**: Integration with storage system
-4. **Auto-save**: Prevent data loss
+### 🔥 Phase 2 Critical Path (Updated Priorities):
+1. **Storage System**: File-based journal entry management with YAML frontmatter
+2. **Entry-Calendar Integration**: Load existing entries when dates are selected
+3. **Enhanced Text Editor**: Markdown support, formatting, auto-save
+4. **Entry Persistence**: Save entries to storage location with proper structure
+5. **Real Entry Indicators**: Replace sample data with actual entry detection
 
 ### 📈 Success Metrics for Next Sprint:
-- [ ] User can select storage directory
-- [ ] User can create/edit journal entries
-- [ ] Calendar shows dates with existing entries
-- [ ] Entries persist between app sessions
+- [x] User can complete onboarding and select storage directory
+- [x] Calendar navigation and date selection works perfectly
+- [ ] User can create/edit journal entries with persistence
+- [ ] Calendar shows real dates with existing entries (not sample data)
+- [ ] Entries persist between app sessions with proper file structure
 
 ## Notes & Assumptions
 

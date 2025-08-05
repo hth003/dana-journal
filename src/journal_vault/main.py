@@ -8,9 +8,10 @@ import os
 from datetime import datetime, timedelta
 from typing import Set
 import flet as ft
-from .ui.theme import theme_manager, ThemedContainer, ThemedText
-from .ui.components import OnboardingFlow, CalendarComponent
+from .ui.theme import theme_manager, ThemedContainer, ThemedText, ThemedCard, SPACING, COMPONENT_SIZES
+from .ui.components import OnboardingFlow, CalendarComponent, EnhancedTextEditor, FileExplorer
 from .config import app_config
+from .storage.file_manager import FileManager
 
 
 class JournalVaultApp:
@@ -38,6 +39,13 @@ class JournalVaultApp:
         # UI components
         self.calendar_component = None
         self.onboarding_flow = None
+        self.text_editor = None
+        self.file_explorer = None
+        self.file_manager = None
+        
+        # Current entry state
+        self.current_entry_date = self.selected_date.date()
+        self.current_entry_content = ""
         
         # Configure page
         self._setup_page()
@@ -105,6 +113,9 @@ class JournalVaultApp:
         # Mark onboarding as complete
         app_config.set_onboarded(True)
         
+        # Initialize file manager with storage path
+        self.file_manager = FileManager(self.storage_path)
+        
         # Clear page and create main layout
         self.page.clean()
         self.is_onboarded = True
@@ -131,81 +142,67 @@ class JournalVaultApp:
         """Create the main three-panel layout with Obsidian-like design."""
         colors = self.theme_manager.colors
         
-        # Header with title and date
+        # Header with consistent spacing and typography
         header = ThemedContainer(
             self.theme_manager,
             variant="surface",
+            elevation="sm",
             content=ft.Row(
                 controls=[
                     ThemedText(
                         self.theme_manager,
                         "AI Journal Vault",
                         variant="primary",
-                        size=20,
-                        weight=ft.FontWeight.W_600
+                        typography="h3"
                     ),
                     ft.Container()  # Empty container for spacing
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 vertical_alignment=ft.CrossAxisAlignment.CENTER
             ),
-            padding=ft.padding.all(20),
-            border=ft.border.only(bottom=ft.border.BorderSide(1, colors.border_subtle)),
-            shadow=ft.BoxShadow(
-                spread_radius=0,
-                blur_radius=4,
-                color=colors.shadow_light,
-                offset=ft.Offset(0, 1),
-            )
+            spacing="lg",
+            border=ft.border.only(bottom=ft.border.BorderSide(1, colors.border_subtle))
         )
+        
+        # Initialize file manager if not already done
+        if not self.file_manager:
+            self.file_manager = FileManager(self.storage_path)
+        
+        # Get actual entry dates from file manager
+        actual_entry_dates = self.file_manager.get_entry_dates()
         
         # Left sidebar - Calendar and Files
         self.calendar_component = CalendarComponent(
             self.theme_manager,
             on_date_selected=self._on_date_selected,
-            entry_dates=self.entry_dates
+            entry_dates=actual_entry_dates
         )
         
-        # Calendar section
+        # File manager for file operations
+        self.file_manager = FileManager(self.storage_path)
+        
+        # File explorer component
+        self.file_explorer = FileExplorer(
+            self.theme_manager,
+            file_manager=self.file_manager,
+            on_file_select=self._on_file_selected,
+            on_create_entry=self._on_file_created
+        )
+        
+        # Calendar section with consistent spacing
         calendar_section = ft.Container(
             content=self.calendar_component.get_container(),
-            padding=ft.padding.all(16)
+            padding=ft.padding.all(SPACING["md"])
         )
         
-        # Files section
+        # Files section with file explorer
         files_section = ft.Container(
-            content=ft.Column(
-                controls=[
-                    ThemedText(
-                        self.theme_manager,
-                        "Files",
-                        variant="primary",
-                        size=16,
-                        weight=ft.FontWeight.W_500
-                    ),
-                    ft.Container(height=8),
-                    ThemedContainer(
-                        self.theme_manager,
-                        variant="surface",
-                        content=ft.Text(
-                            "Journal files will appear here",
-                            color=colors.text_muted,
-                            size=12
-                        ),
-                        padding=ft.padding.all(16),
-                        border_radius=8,
-                        border=ft.border.all(1, colors.border_subtle),
-                        expand=True
-                    )
-                ],
-                spacing=0,
-                expand=True
-            ),
-            padding=ft.padding.all(16),
+            content=self.file_explorer.get_container(),
+            padding=ft.padding.all(SPACING["md"]),
             expand=True
         )
         
-        # Left sidebar container
+        # Left sidebar container with consistent sizing
         left_sidebar = ft.Container(
             content=ft.Column(
                 controls=[
@@ -219,65 +216,59 @@ class JournalVaultApp:
                 spacing=0,
                 expand=True
             ),
-            width=280,
+            width=COMPONENT_SIZES["sidebar_width"],
             border=ft.border.only(right=ft.border.BorderSide(1, colors.border_subtle))
         )
         
-        # Main content area - Journal Entry and AI Reflection
-        # Journal Entry section
+        # Main content area - Enhanced Text Editor
+        # Initialize text editor
+        self.text_editor = EnhancedTextEditor(
+            self.theme_manager,
+            on_content_change=self._on_content_change,
+            on_save=self._on_save_entry,
+            placeholder_text=f"Start writing your thoughts for {self.current_entry_date.strftime('%B %d, %Y')}...",
+            auto_save_delay=3.0,
+            show_stats=True
+        )
+        
         journal_entry_section = ft.Container(
             content=ft.Column(
                 controls=[
-                    ThemedText(
-                        self.theme_manager,
-                        "Journal Entry",
-                        variant="primary",
-                        size=16,
-                        weight=ft.FontWeight.W_500
-                    ),
-                    ft.Container(height=8),
-                    ThemedContainer(
-                        self.theme_manager,
-                        variant="surface",
-                        content=ft.Column(
-                            controls=[
-                                ft.TextField(
-                                    hint_text="Start writing your thoughts for today...",
-                                    multiline=True,
-                                    min_lines=10,
-                                    max_lines=None,
-                                    border=ft.InputBorder.NONE,
-                                    hint_style=ft.TextStyle(color=colors.text_muted),
-                                    text_style=ft.TextStyle(
-                                        color=colors.text_primary,
-                                        size=14
-                                    ),
-                                    bgcolor="transparent",
-                                    expand=True
+                    ft.Row(
+                        controls=[
+                            ThemedText(
+                                self.theme_manager,
+                                f"Journal Entry - {self.current_entry_date.strftime('%B %d, %Y')}",
+                                variant="primary",
+                                typography="h4"
+                            ),
+                            ft.Container(expand=True),
+                            ft.TextButton(
+                                text="Save",
+                                on_click=self._manual_save,
+                                style=ft.ButtonStyle(
+                                    color=colors.primary,
+                                    bgcolor={ft.ControlState.HOVERED: colors.hover}
                                 )
-                            ],
-                            expand=True
-                        ),
-                        padding=ft.padding.all(20),
-                        border_radius=8,
-                        border=ft.border.all(1, colors.border_subtle),
-                        shadow=ft.BoxShadow(
-                            spread_radius=0,
-                            blur_radius=2,
-                            color=colors.shadow_light,
-                            offset=ft.Offset(0, 1),
-                        ),
+                            )
+                        ],
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER
+                    ),
+                    ft.Container(height=SPACING["sm"]),
+                    ft.Container(
+                        content=self.text_editor.get_container(),
                         expand=True
                     )
                 ],
                 spacing=0,
                 expand=True
             ),
-            padding=ft.padding.all(16),
+            padding=ft.padding.all(SPACING["md"]),
             expand=True
         )
         
-        # AI Reflection section
+        # AI Reflection section with improved consistency
         ai_reflection_section = ft.Container(
             content=ft.Column(
                 controls=[
@@ -285,40 +276,31 @@ class JournalVaultApp:
                         self.theme_manager,
                         "AI Reflection",
                         variant="primary",
-                        size=16,
-                        weight=ft.FontWeight.W_500
+                        typography="h4"
                     ),
-                    ft.Container(height=8),
-                    ThemedContainer(
+                    ft.Container(height=SPACING["sm"]),
+                    ThemedCard(
                         self.theme_manager,
-                        variant="surface",
+                        elevation="md",
                         content=ft.Column(
                             controls=[
                                 ThemedText(
                                     self.theme_manager,
                                     "AI-powered insights and reflection questions will appear here.",
                                     variant="secondary",
-                                    size=12
+                                    typography="body_sm"
                                 )
                             ],
                             expand=True
                         ),
-                        padding=ft.padding.all(20),
-                        border_radius=8,
-                        border=ft.border.all(1, colors.border_subtle),
-                        shadow=ft.BoxShadow(
-                            spread_radius=0,
-                            blur_radius=2,
-                            color=colors.shadow_light,
-                            offset=ft.Offset(0, 1),
-                        ),
+                        spacing="lg",
                         expand=True
                     )
                 ],
                 spacing=0,
                 expand=True
             ),
-            padding=ft.padding.all(16),
+            padding=ft.padding.all(SPACING["md"]),
             expand=True
         )
         
@@ -354,14 +336,178 @@ class JournalVaultApp:
         )
         
         self.page.add(main_layout)
+        
+        # Load initial entry
+        if self.file_manager:
+            self._load_entry_for_date(self.current_entry_date)
     
     def _on_date_selected(self, selected_date: datetime) -> None:
         """Handle date selection from calendar."""
         self.selected_date = selected_date
+        new_date = selected_date.date()
         
-        # Here you would typically load the entry for the selected date
-        # For now, we'll just update the UI to reflect the selection
+        # Save current entry before switching
+        if self.text_editor and self.current_entry_date != new_date:
+            current_content = self.text_editor.get_content()
+            if current_content.strip():  # Only save if there's content
+                self._save_entry_for_date(self.current_entry_date, current_content)
+        
+        # Switch to new date
+        self.current_entry_date = new_date
+        
+        # Load entry for new date
+        self._load_entry_for_date(new_date)
+        
+        # Update text editor placeholder and title
+        self._update_editor_for_date(new_date)
+        
+        # Update file explorer selection
+        if self.file_explorer:
+            self.file_explorer.select_entry_by_date(new_date)
+        
         print(f"Selected date: {selected_date.strftime('%Y-%m-%d')}")
+    
+    def _on_file_selected(self, file_path, entry_date) -> None:
+        """Handle file selection from file explorer."""
+        if entry_date:
+            # Update calendar and load entry
+            self.selected_date = datetime.combine(entry_date, datetime.min.time())
+            self.current_entry_date = entry_date
+            
+            # Load entry content
+            self._load_entry_for_date(entry_date)
+            
+            # Update calendar selection
+            if self.calendar_component:
+                self.calendar_component.set_selected_date(self.selected_date)
+            
+            # Update text editor
+            self._update_editor_for_date(entry_date)
+            
+            print(f"Selected file: {file_path} for date: {entry_date}")
+    
+    def _on_file_created(self, entry_date) -> None:
+        """Handle new file creation."""
+        # Create new entry
+        if self.file_manager:
+            try:
+                entry = self.file_manager.create_entry(entry_date)
+                
+                # Update UI
+                self._refresh_entry_dates()
+                
+                # Select the new entry
+                self.selected_date = datetime.combine(entry_date, datetime.min.time())
+                self._on_date_selected(self.selected_date)
+                
+                print(f"Created new entry for: {entry_date}")
+            except Exception as e:
+                print(f"Error creating entry: {e}")
+    
+    def _on_file_deleted(self, entry_date) -> None:
+        """Handle file deletion."""
+        # Delete entry from file manager
+        if self.file_manager:
+            try:
+                self.file_manager.delete_entry(entry_date)
+                
+                # Update UI
+                self._refresh_entry_dates()
+                
+                # Clear text editor if this was the current entry
+                if self.current_entry_date == entry_date and self.text_editor:
+                    self.text_editor.clear()
+                
+                print(f"Deleted entry for: {entry_date}")
+            except Exception as e:
+                print(f"Error deleting entry: {e}")
+    
+    def _on_content_change(self, content: str) -> None:
+        """Handle text editor content changes."""
+        self.current_entry_content = content
+    
+    def _on_save_entry(self, content: str) -> None:
+        """Handle auto-save from text editor."""
+        self._save_entry_for_date(self.current_entry_date, content)
+    
+    def _manual_save(self, e) -> None:
+        """Handle manual save button click."""
+        if self.text_editor:
+            self.text_editor.save_now()
+    
+    def _load_entry_for_date(self, entry_date) -> None:
+        """Load entry content for a specific date."""
+        if not self.file_manager:
+            return
+        
+        try:
+            entry = self.file_manager.load_entry(entry_date)
+            if entry:
+                self.current_entry_content = entry.content
+                if self.text_editor:
+                    self.text_editor.set_content(entry.content)
+            else:
+                self.current_entry_content = ""
+                if self.text_editor:
+                    self.text_editor.clear()
+        except Exception as e:
+            print(f"Error loading entry for {entry_date}: {e}")
+            self.current_entry_content = ""
+            if self.text_editor:
+                self.text_editor.clear()
+    
+    def _save_entry_for_date(self, entry_date, content: str) -> None:
+        """Save entry content for a specific date."""
+        if not self.file_manager or not content.strip():
+            return
+        
+        try:
+            # Load existing entry or create new one
+            entry = self.file_manager.load_entry(entry_date)
+            if entry:
+                entry.content = content
+                self.file_manager.save_entry(entry)
+            else:
+                self.file_manager.create_entry(entry_date, content=content)
+            
+            # Update entry dates in UI components
+            self._refresh_entry_dates()
+            
+            print(f"Saved entry for {entry_date}")
+        except Exception as e:
+            print(f"Error saving entry for {entry_date}: {e}")
+    
+    def _update_editor_for_date(self, entry_date) -> None:
+        """Update text editor for a specific date."""
+        if not self.text_editor:
+            return
+        
+        # Update placeholder text
+        placeholder = f"Start writing your thoughts for {entry_date.strftime('%B %d, %Y')}..."
+        # Note: Flet doesn't allow dynamic placeholder updates, so this is conceptual
+        
+        # Update header in the UI would require rebuilding the header section
+        # For now, just print the date change
+        print(f"Editor updated for date: {entry_date}")
+    
+    def _refresh_entry_dates(self) -> None:
+        """Refresh entry dates in all UI components."""
+        if not self.file_manager:
+            return
+        
+        try:
+            entry_dates = self.file_manager.get_entry_dates()
+            
+            # Update calendar
+            if self.calendar_component:
+                self.calendar_component.update_entry_dates(entry_dates)
+            
+            # Update file explorer
+            if self.file_explorer:
+                self.file_explorer.update_entry_dates(entry_dates)
+                
+        except Exception as e:
+            print(f"Error refreshing entry dates: {e}")
     
     
     def run(self) -> None:

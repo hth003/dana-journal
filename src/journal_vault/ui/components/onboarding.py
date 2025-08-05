@@ -8,7 +8,7 @@ storage location selection, theme preference, and optional first entry creation.
 import os
 from typing import Callable, Optional
 import flet as ft
-from ..theme import ThemeManager, ThemedContainer, ThemedText
+from ..theme import ThemeManager, ThemedContainer, ThemedText, ThemedCard, ThemedButton, SPACING
 
 
 class OnboardingFlow:
@@ -45,7 +45,7 @@ class OnboardingFlow:
                 scroll=ft.ScrollMode.AUTO,
                 expand=True
             ),
-            padding=ft.padding.all(40),
+            padding=ft.padding.all(SPACING["4xl"]),
             expand=True
         )
     
@@ -153,7 +153,7 @@ class OnboardingFlow:
                         ],
                         spacing=15
                     ),
-                    padding=ft.padding.all(25),
+                    padding=ft.padding.all(SPACING["xl"]),
                     border_radius=12,
                     border=ft.border.all(1, colors.border_subtle)
                 ),
@@ -240,7 +240,7 @@ class OnboardingFlow:
                         ],
                         spacing=20
                     ),
-                    padding=ft.padding.all(25),
+                    padding=ft.padding.all(SPACING["xl"]),
                     border_radius=12,
                     border=ft.border.all(1, colors.border_subtle)
                 ),
@@ -255,7 +255,7 @@ class OnboardingFlow:
                         size=14,
                         text_align=ft.TextAlign.CENTER
                     ),
-                    padding=ft.padding.all(15),
+                    padding=ft.padding.all(SPACING["md"]),
                     border_radius=8
                 ),
                 ft.Container(height=40),
@@ -386,7 +386,7 @@ class OnboardingFlow:
                         ],
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER
                     ),
-                    padding=ft.padding.all(25),
+                    padding=ft.padding.all(SPACING["xl"]),
                     border_radius=12,
                     border=ft.border.all(1, colors.border_subtle)
                 ),
@@ -412,7 +412,7 @@ class OnboardingFlow:
                         ],
                         spacing=8
                     ),
-                    padding=ft.padding.all(15),
+                    padding=ft.padding.all(SPACING["md"]),
                     border_radius=8
                 ),
                 ft.Container(height=40),

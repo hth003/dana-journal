@@ -9,7 +9,7 @@ import calendar
 from datetime import datetime, timedelta
 from typing import Set, Callable, Optional
 import flet as ft
-from ..theme import ThemeManager, ThemedContainer, ThemedText
+from ..theme import ThemeManager, ThemedContainer, ThemedText, SPACING, COMPONENT_SIZES
 
 
 class CalendarComponent:
@@ -51,7 +51,7 @@ class CalendarComponent:
                 spacing=0,
                 tight=True
             ),
-            padding=ft.padding.all(16)  # Reduced padding
+            padding=ft.padding.all(SPACING["md"])  # Consistent spacing
         )
     
     def _create_header(self) -> ft.Row:
@@ -198,7 +198,7 @@ class CalendarComponent:
         current_date = datetime(self.current_date.year, self.current_date.month, day).date()
         
         # Determine if this day has entries
-        has_entry = any(entry_date.date() == current_date for entry_date in self.entry_dates)
+        has_entry = any(entry_date == current_date for entry_date in self.entry_dates)
         
         # Determine day state
         is_today = current_date == datetime.now().date()
@@ -494,7 +494,7 @@ class MiniCalendar(CalendarComponent):
             return ft.Container(width=24, height=24)
         
         current_date = datetime(self.current_date.year, self.current_date.month, day).date()
-        has_entry = any(entry_date.date() == current_date for entry_date in self.entry_dates)
+        has_entry = any(entry_date == current_date for entry_date in self.entry_dates)
         is_today = current_date == datetime.now().date()
         is_selected = current_date == self.selected_date
         
