@@ -42,16 +42,16 @@ class CalendarComponent:
             content=ft.Column(
                 controls=[
                     self._create_header(),
-                    ft.Container(height=10),  # Spacer
+                    ft.Container(height=8),  # Reduced spacer
                     self._create_weekday_headers(),
                     self._create_calendar_grid(),
-                    ft.Container(height=15),  # Spacer
+                    ft.Container(height=12),  # Reduced spacer
                     self._create_legend(),
                 ],
                 spacing=0,
                 tight=True
             ),
-            padding=ft.padding.all(20),
+            padding=ft.padding.all(16),  # Reduced padding
             border=ft.border.only(right=ft.border.BorderSide(1, colors.border_subtle))
         )
     
@@ -59,12 +59,12 @@ class CalendarComponent:
         """Create calendar header with month/year and navigation."""
         colors = self.theme_manager.colors
         
-        # Month/Year text
+        # Month/Year text - using 3-character month abbreviation like Obsidian
         month_year = ThemedText(
             self.theme_manager,
-            self.current_date.strftime("%B %Y"),
+            self.current_date.strftime("%b %Y"),  # Changed from "%B %Y" to "%b %Y"
             variant="primary",
-            size=18,
+            size=16,  # Slightly smaller
             weight=ft.FontWeight.W_600
         )
         
@@ -72,6 +72,7 @@ class CalendarComponent:
         prev_button = ft.IconButton(
             icon=ft.Icons.CHEVRON_LEFT,
             icon_color=colors.text_secondary,
+            icon_size=18,  # Smaller icons
             on_click=self._go_previous_month,
             tooltip="Previous month",
             style=ft.ButtonStyle(
@@ -79,13 +80,14 @@ class CalendarComponent:
                     ft.ControlState.DEFAULT: "transparent",
                     ft.ControlState.HOVERED: colors.hover,
                 },
-                shape=ft.RoundedRectangleBorder(radius=6)
+                shape=ft.RoundedRectangleBorder(radius=4)  # Smaller radius
             )
         )
         
         next_button = ft.IconButton(
             icon=ft.Icons.CHEVRON_RIGHT,
             icon_color=colors.text_secondary,
+            icon_size=18,  # Smaller icons
             on_click=self._go_next_month,
             tooltip="Next month",
             style=ft.ButtonStyle(
@@ -93,7 +95,7 @@ class CalendarComponent:
                     ft.ControlState.DEFAULT: "transparent",
                     ft.ControlState.HOVERED: colors.hover,
                 },
-                shape=ft.RoundedRectangleBorder(radius=6)
+                shape=ft.RoundedRectangleBorder(radius=4)  # Smaller radius
             )
         )
         
@@ -107,9 +109,9 @@ class CalendarComponent:
                     ft.ControlState.DEFAULT: "transparent",
                     ft.ControlState.HOVERED: colors.hover,
                 },
-                text_style=ft.TextStyle(size=12, weight=ft.FontWeight.W_500),
-                padding=ft.padding.symmetric(horizontal=12, vertical=6),
-                shape=ft.RoundedRectangleBorder(radius=6)
+                text_style=ft.TextStyle(size=11, weight=ft.FontWeight.W_500),  # Smaller text
+                padding=ft.padding.symmetric(horizontal=8, vertical=4),  # Smaller padding
+                shape=ft.RoundedRectangleBorder(radius=4)  # Smaller radius
             )
         )
         
@@ -117,7 +119,7 @@ class CalendarComponent:
             controls=[
                 ft.Row(
                     controls=[prev_button, month_year, next_button],
-                    spacing=5,
+                    spacing=4,  # Reduced spacing
                     vertical_alignment=ft.CrossAxisAlignment.CENTER
                 ),
                 today_button
@@ -139,20 +141,20 @@ class CalendarComponent:
                         self.theme_manager,
                         day,
                         variant="muted",
-                        size=11,
+                        size=10,  # Smaller text
                         weight=ft.FontWeight.W_500,
                         text_align=ft.TextAlign.CENTER
                     ),
-                    width=36,
-                    height=24,
+                    width=32,  # Smaller width
+                    height=20,  # Smaller height
                     alignment=ft.alignment.center
                 )
             )
         
         return ft.Row(
             controls=headers,
-            spacing=2,
-            alignment=ft.MainAxisAlignment.CENTER
+            spacing=2,  # Reduced spacing
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN
         )
     
     def _create_calendar_grid(self) -> ft.Column:
@@ -167,7 +169,7 @@ class CalendarComponent:
         
         return ft.Column(
             controls=weeks,
-            spacing=2,
+            spacing=1,  # Reduced spacing
             tight=True
         )
     
@@ -181,8 +183,8 @@ class CalendarComponent:
         
         return ft.Row(
             controls=days,
-            spacing=2,
-            alignment=ft.MainAxisAlignment.CENTER
+            spacing=1,  # Reduced spacing
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN  # Better alignment
         )
     
     def _create_day_container(self, day: int) -> ft.Container:
@@ -191,7 +193,7 @@ class CalendarComponent:
         
         if day == 0:
             # Empty day (previous/next month)
-            return ft.Container(width=36, height=32)
+            return ft.Container(width=32, height=28)  # Smaller empty containers
         
         # Create date for this day
         current_date = datetime(self.current_date.year, self.current_date.month, day).date()
@@ -230,35 +232,35 @@ class CalendarComponent:
                         content=ft.Text(
                             str(day),
                             color=text_color,
-                            size=13,
+                            size=12,  # Smaller text
                             weight=ft.FontWeight.W_500,
                             text_align=ft.TextAlign.CENTER
                         ),
                         alignment=ft.alignment.center,
-                        width=36,
-                        height=32
+                        width=32,
+                        height=28
                     ),
                     # Entry indicator dot
                     ft.Container(
                         content=ft.Container(
-                            width=4,
-                            height=4,
-                            border_radius=2,
+                            width=3,  # Smaller dot
+                            height=3,  # Smaller dot
+                            border_radius=1.5,
                             bgcolor=colors.accent if not is_selected else colors.text_on_primary,
                         ),
                         alignment=ft.alignment.bottom_center,
-                        margin=ft.margin.only(bottom=3),
-                        width=36,
-                        height=32,
+                        margin=ft.margin.only(bottom=2),  # Reduced margin
+                        width=32,
+                        height=28,
                         visible=has_entry
                     )
                 ]
             ),
-            width=36,
-            height=32,
+            width=32,  # Smaller width
+            height=28,  # Smaller height
             bgcolor=bg_color,
             border=ft.border.all(1, border_color) if border_color != "transparent" else None,
-            border_radius=6,
+            border_radius=4,  # Smaller radius
             on_click=lambda e, date=current_date: self._select_date(date),
             ink=True,
             animate=ft.Animation(100, ft.AnimationCurve.EASE_OUT),
@@ -284,42 +286,42 @@ class CalendarComponent:
                 ft.Row(
                     controls=[
                         ft.Container(
-                            width=6,
-                            height=6,
-                            border_radius=3,
+                            width=4,  # Smaller dot
+                            height=4,  # Smaller dot
+                            border_radius=2,
                             bgcolor=colors.accent
                         ),
                         ThemedText(
                             self.theme_manager,
                             "Has entry",
                             variant="muted",
-                            size=11
+                            size=10  # Smaller text
                         )
                     ],
-                    spacing=6,
+                    spacing=4,  # Reduced spacing
                     vertical_alignment=ft.CrossAxisAlignment.CENTER
                 ),
                 # Today indicator
                 ft.Row(
                     controls=[
                         ft.Container(
-                            width=6,
-                            height=6,
-                            border_radius=3,
+                            width=4,  # Smaller dot
+                            height=4,  # Smaller dot
+                            border_radius=2,
                             bgcolor=colors.primary
                         ),
                         ThemedText(
                             self.theme_manager,
                             "Today",
                             variant="muted",
-                            size=11
+                            size=10  # Smaller text
                         )
                     ],
-                    spacing=6,
+                    spacing=4,  # Reduced spacing
                     vertical_alignment=ft.CrossAxisAlignment.CENTER
                 )
             ],
-            spacing=15,
+            spacing=12,  # Reduced spacing
             alignment=ft.MainAxisAlignment.CENTER
         )
     

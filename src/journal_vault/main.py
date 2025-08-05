@@ -176,14 +176,14 @@ class JournalVaultApp:
                         size=16,
                         weight=ft.FontWeight.W_500
                     ),
-                    ft.Container(height=5),
+                    ft.Container(height=8),  # Slightly more spacing
                     self.calendar_component.get_container()
                 ],
                 spacing=0,
                 tight=True
             ),
-            width=320,
-            padding=ft.padding.only(top=20, left=20, right=0, bottom=20)
+            width=300,  # Slightly narrower
+            padding=ft.padding.only(top=16, left=16, right=8, bottom=16)  # Reduced padding
         )
         
         # Right panel - Journal Editor
@@ -203,7 +203,7 @@ class JournalVaultApp:
                             ),
                             ThemedText(
                                 self.theme_manager,
-                                self.selected_date.strftime("%B %d, %Y"),
+                                self.selected_date.strftime("%b %d, %Y"),  # Changed to 3-character month like calendar
                                 variant="secondary",
                                 size=14
                             )
@@ -313,7 +313,7 @@ class JournalVaultApp:
             if isinstance(header_row, ft.Row) and len(header_row.controls) > 1:
                 date_text = header_row.controls[1]
                 if hasattr(date_text, 'value'):
-                    date_text.value = selected_date.strftime("%B %d, %Y")
+                    date_text.value = selected_date.strftime("%b %d, %Y")  # Consistent with calendar format
                     date_text.update()
         
         # Here you would typically load the entry for the selected date
