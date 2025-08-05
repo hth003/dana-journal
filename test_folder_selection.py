@@ -1,105 +1,69 @@
 #!/usr/bin/env python3
 """
-Test script for folder selection functionality
+Test script to debug folder selection functionality
 """
 
 import os
 import sys
-import tempfile
-import shutil
+import flet as ft
 
-# Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
-
-def test_storage_validation():
-    """Test the storage directory validation functionality"""
-    print("Testing storage directory validation...")
+def test_folder_selection(page: ft.Page):
+    """Test the folder selection functionality."""
     
-    try:
-        from journal_vault.ui.components.onboarding import OnboardingFlow
-        from journal_vault.ui.theme import ThemeManager
-        
-        # Create a mock onboarding flow to test validation
-        theme_manager = ThemeManager()
-        onboarding = OnboardingFlow(theme_manager, lambda x: None)
-        
-        # Test 1: Valid directory
-        temp_dir = tempfile.mkdtemp()
+    def on_folder_selected(result: ft.FilePickerResultEvent):
+        print(f"Folder selected: {result.path}")
+        if result.path:
+            result_text.value = f"Selected: {result.path}"
+        else:
+            result_text.value = "No folder selected"
+        result_text.update()
+    
+    # Create file picker
+    file_picker = ft.FilePicker(on_result=on_folder_selected)
+    
+    # Add to page overlay
+    page.overlay.append(file_picker)
+    
+    # Create UI
+    result_text = ft.Text("No folder selected yet")
+    
+    def select_folder(e):
+        print("Select folder button clicked")
         try:
-            result = onboarding._validate_storage_directory(temp_dir)
-            print(f"✓ Valid directory test: {result}")
-            assert result == True, "Valid directory should return True"
-        finally:
-            shutil.rmtree(temp_dir)
+            file_picker.get_directory_path(dialog_title="Choose Folder")
+            print("Directory picker opened")
+        except Exception as ex:
+            print(f"Error opening directory picker: {ex}")
+    
+    def use_default(e):
+        print("Use default button clicked")
+        default_path = os.path.expanduser("~/Documents/Journal Vault")
+        print(f"Default path: {default_path}")
         
-        # Test 2: Non-existent directory
-        non_existent = "/this/path/does/not/exist"
-        result = onboarding._validate_storage_directory(non_existent)
-        print(f"✓ Non-existent directory test: {result}")
-        assert result == False, "Non-existent directory should return False"
+        # Create directory if it doesn't exist
+        if not os.path.exists(default_path):
+            os.makedirs(default_path, exist_ok=True)
+            print(f"Created directory: {default_path}")
         
-        # Test 3: Default storage creation
-        default_path = os.path.join(os.path.expanduser("~"), "Documents", "Journal Vault Test")
-        
-        # Clean up if exists
-        if os.path.exists(default_path):
-            shutil.rmtree(default_path)
-        
-        # Create default storage path
-        os.makedirs(default_path, exist_ok=True)
-        try:
-            result = onboarding._validate_storage_directory(default_path)
-            print(f"✓ Default storage creation test: {result}")
-            assert result == True, "Created default directory should be valid"
-        finally:
-            shutil.rmtree(default_path)
-        
-        print("✅ All storage validation tests passed!")
-        return True
-        
-    except ImportError as e:
-        print(f"❌ Import error: {e}")
-        print("Note: This is expected if flet is not installed")
-        return False
-    except Exception as e:
-        print(f"❌ Test failed: {e}")
-        return False
+        result_text.value = f"Default: {default_path}"
+        result_text.update()
+    
+    page.add(
+        ft.Column([
+            ft.Text("Folder Selection Test", size=20, weight=ft.FontWeight.BOLD),
+            ft.Container(height=20),
+            ft.ElevatedButton("Choose Folder", on_click=select_folder),
+            ft.Container(height=10),
+            ft.OutlinedButton("Use Default", on_click=use_default),
+            ft.Container(height=20),
+            result_text
+        ])
+    )
 
-def test_default_path_creation():
-    """Test default path creation logic"""
-    print("Testing default path creation...")
-    
-    default_path = os.path.join(os.path.expanduser("~"), "Documents", "Journal Vault")
-    print(f"Default path would be: {default_path}")
-    
-    # Check if Documents folder exists
-    docs_path = os.path.join(os.path.expanduser("~"), "Documents")
-    if os.path.exists(docs_path):
-        print("✓ Documents folder exists")
-        print("✓ Default path creation should work")
-        return True
-    else:
-        print("⚠️  Documents folder doesn't exist, fallback needed")
-        return False
+def main(page: ft.Page):
+    page.title = "Folder Selection Test"
+    page.padding = 50
+    test_folder_selection(page)
 
 if __name__ == "__main__":
-    print("Journal Vault - Folder Selection Test")
-    print("=" * 40)
-    
-    # Test storage validation
-    validation_passed = test_storage_validation()
-    
-    print()
-    
-    # Test default path
-    default_path_ok = test_default_path_creation()
-    
-    print()
-    print("Summary:")
-    print(f"Storage validation: {'✅ PASS' if validation_passed else '❌ FAIL'}")
-    print(f"Default path logic: {'✅ PASS' if default_path_ok else '⚠️  WARN'}")
-    
-    if validation_passed and default_path_ok:
-        print("\n🎉 Folder selection fix appears to be working correctly!")
-    else:
-        print("\n⚠️  Some tests failed, but core logic is implemented.")
+    ft.app(target=main)

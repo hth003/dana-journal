@@ -405,7 +405,7 @@ class OnboardingFlow:
                             ),
                             ThemedText(
                                 self.theme_manager,
-                                "• Use 'Choose Folder' to select a custom location\n• Use 'Use Default' for Documents/Journal Vault\n• Ensure the location is secure and accessible",
+                                "• Use 'Choose Folder' to browse and select any folder\n• Use 'Use Default' for Documents/Journal Vault\n• Ensure the location is secure and accessible",
                                 variant="secondary",
                                 size=12
                             )
@@ -472,36 +472,89 @@ class OnboardingFlow:
         )
     
     def _select_storage_location(self, e) -> None:
-        """Handle storage location selection."""
+        """Handle storage location selection using native macOS dialog."""
         try:
-            # Get page reference
-            page_ref = None
-            if hasattr(e, 'page') and e.page:
-                page_ref = e.page
-            elif self.page:
-                page_ref = self.page
-            elif hasattr(e, 'control') and hasattr(e.control, 'page') and e.control.page:
-                page_ref = e.control.page
+            # Update button text to show it's working
+            if hasattr(e, 'control'):
+                e.control.text = "Opening..."
+                e.control.update()
             
-            if not page_ref:
-                self._show_storage_error("Cannot access page for file dialog. Please use 'Use Default' button instead.")
-                return
+            # Use native macOS dialog via osascript
+            import subprocess
+            result = subprocess.run([
+                "osascript", "-e", 
+                'choose folder with prompt "Choose Journal Storage Location"'
+            ], capture_output=True, text=True, timeout=30)
             
-            # Ensure page has overlay list
-            if not hasattr(page_ref, 'overlay'):
-                self._show_storage_error("Page overlay not available. Please use 'Use Default' button instead.")
-                return
+            if result.returncode == 0:
+                selected_path = result.stdout.strip()
+                
+                # Convert alias path to regular path if needed
+                if selected_path.startswith("alias "):
+                    # Extract the path from the alias format
+                    # Format is: alias Macintosh HD:Users:username:Documents:
+                    # We need to convert this to: /Users/username/Documents
+                    selected_path = selected_path.replace("alias ", "")
+                    
+                    # Split by colons and reconstruct the path
+                    parts = selected_path.split(":")
+                    if len(parts) >= 4:  # Should have at least Macintosh HD, Users, username, Documents
+                        # Skip "Macintosh HD" and "Users", start from username
+                        username = parts[2]
+                        folder = parts[3]
+                        selected_path = f"/Users/{username}/{folder}"
+                    else:
+                        # Fallback: just replace colons with slashes
+                        selected_path = selected_path.replace(":", "/")
+                        # Remove trailing slash
+                        if selected_path.endswith("/"):
+                            selected_path = selected_path[:-1]
+                
+                # Store the selected path (don't create folder yet)
+                journal_vault_path = os.path.join(selected_path, "Journal Vault")
+                
+                # Validate that we can create the folder in this location
+                if os.access(selected_path, os.W_OK):
+                    self.onboarding_data['storage_path'] = journal_vault_path
+                    self.storage_path_text.value = journal_vault_path
+                    self.storage_path_text.update()
+                    # Recreate the step to show the next button
+                    self.container.content.controls[2] = self._get_current_step_content()
+                    self.container.update()
+                else:
+                    self._show_storage_error("Cannot create folder in selected location. Please choose a different location.")
+            else:
+                # User cancelled or error occurred
+                self._show_storage_error("No folder selected or dialog was cancelled.")
             
-            # Add file picker to page overlay if not already added
-            if self.file_picker not in page_ref.overlay:
-                page_ref.overlay.append(self.file_picker)
-                page_ref.update()
+            # Reset button text (only if control is still valid)
+            try:
+                if hasattr(e, 'control') and e.control:
+                    e.control.text = "Choose Folder"
+                    e.control.update()
+            except Exception:
+                # Ignore button update errors
+                pass
             
-            # Open directory picker dialog
-            self.file_picker.get_directory_path(dialog_title="Choose Journal Storage Location")
-            
+        except subprocess.TimeoutExpired:
+            # Reset button text on timeout
+            try:
+                if hasattr(e, 'control') and e.control:
+                    e.control.text = "Choose Folder"
+                    e.control.update()
+            except Exception:
+                pass
+            self._show_storage_error("Folder selection dialog timed out. Please try again.")
         except Exception as ex:
-            self._show_storage_error(f"Error opening folder selection dialog: {str(ex)}")
+            # Reset button text on error
+            try:
+                if hasattr(e, 'control') and e.control:
+                    e.control.text = "Choose Folder"
+                    e.control.update()
+            except Exception:
+                pass
+            self._show_storage_error(f"Could not open folder picker: {str(ex)}. Using default location instead.")
+            self._use_default_location(e)
     
     def _on_folder_selected(self, result: ft.FilePickerResultEvent) -> None:
         """Handle file picker result."""
@@ -519,7 +572,9 @@ class OnboardingFlow:
                     self._show_storage_error("Selected directory is not writable. Please choose a different location.")
             elif result.path:
                 self._show_storage_error("Please select a valid directory.")
-            # If result.path is None, user cancelled - do nothing
+            else:
+                # User cancelled - do nothing
+                pass
         except Exception as ex:
             self._show_storage_error(f"Error selecting directory: {str(ex)}")
     
@@ -566,6 +621,8 @@ class OnboardingFlow:
             # If default also fails, just show error message
             pass
     
+    # Removed unused dialog method
+    
     
     def _go_back(self, e) -> None:
         """Go to previous step."""
@@ -584,8 +641,34 @@ class OnboardingFlow:
     
     def _complete_onboarding(self, e) -> None:
         """Complete the onboarding process."""
-        # Call completion callback
-        self.on_complete(self.onboarding_data)
+        try:
+            # Create the Journal Vault folder if storage path is set
+            storage_path = self.onboarding_data.get('storage_path')
+            if storage_path:
+                # Create the folder
+                os.makedirs(storage_path, exist_ok=True)
+                
+                # Validate that the folder was created successfully
+                if os.path.exists(storage_path) and os.access(storage_path, os.W_OK):
+                    # Call completion callback
+                    self.on_complete(self.onboarding_data)
+                else:
+                    self._show_storage_error("Failed to create Journal Vault folder. Please try again.")
+            else:
+                # No storage path set, use default
+                self._use_default_location(e)
+                # Try to complete again after setting default
+                storage_path = self.onboarding_data.get('storage_path')
+                if storage_path:
+                    os.makedirs(storage_path, exist_ok=True)
+                    if os.path.exists(storage_path) and os.access(storage_path, os.W_OK):
+                        self.on_complete(self.onboarding_data)
+                    else:
+                        self._show_storage_error("Failed to create default Journal Vault folder.")
+                else:
+                    self._show_storage_error("No storage location configured.")
+        except Exception as ex:
+            self._show_storage_error(f"Error completing setup: {str(ex)}")
     
     def _validate_storage_directory(self, path: str) -> bool:
         """Validate that the storage directory is accessible and writable."""
@@ -658,7 +741,11 @@ class OnboardingFlow:
     
     def setup_page_overlays(self, page: ft.Page) -> None:
         """Set up page overlays including file picker."""
-        if hasattr(page, 'overlay'):
-            if self.file_picker not in page.overlay:
-                page.overlay.append(self.file_picker)
-                page.update()
+        # Ensure page has overlay list
+        if not hasattr(page, 'overlay'):
+            page.overlay = []
+        
+        # Add file picker to page overlay if not already added
+        if self.file_picker not in page.overlay:
+            page.overlay.append(self.file_picker)
+            page.update()
