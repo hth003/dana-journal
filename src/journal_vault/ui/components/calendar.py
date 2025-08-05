@@ -38,7 +38,7 @@ class CalendarComponent:
         
         return ThemedContainer(
             self.theme_manager,
-            variant="surface",
+            variant="background",
             content=ft.Column(
                 controls=[
                     self._create_header(),
@@ -51,8 +51,7 @@ class CalendarComponent:
                 spacing=0,
                 tight=True
             ),
-            padding=ft.padding.all(16),  # Reduced padding
-            border=ft.border.only(right=ft.border.BorderSide(1, colors.border_subtle))
+            padding=ft.padding.all(16)  # Reduced padding
         )
     
     def _create_header(self) -> ft.Row:

@@ -128,10 +128,10 @@ class JournalVaultApp:
     
     
     def _create_main_layout(self) -> None:
-        """Create the main three-panel layout."""
+        """Create the main three-panel layout with Obsidian-like design."""
         colors = self.theme_manager.colors
         
-        # Header with title and theme toggle
+        # Header with title and date
         header = ThemedContainer(
             self.theme_manager,
             variant="surface",
@@ -144,7 +144,7 @@ class JournalVaultApp:
                         size=20,
                         weight=ft.FontWeight.W_600
                     ),
-                    ft.Container()  # Empty container instead of theme toggle
+                    ft.Container()  # Empty container for spacing
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 vertical_alignment=ft.CrossAxisAlignment.CENTER
@@ -159,58 +159,83 @@ class JournalVaultApp:
             )
         )
         
-        # Left panel - Calendar
+        # Left sidebar - Calendar and Files
         self.calendar_component = CalendarComponent(
             self.theme_manager,
             on_date_selected=self._on_date_selected,
             entry_dates=self.entry_dates
         )
         
-        calendar_panel = ft.Container(
+        # Calendar section
+        calendar_section = ft.Container(
+            content=self.calendar_component.get_container(),
+            padding=ft.padding.all(16)
+        )
+        
+        # Files section
+        files_section = ft.Container(
             content=ft.Column(
                 controls=[
                     ThemedText(
                         self.theme_manager,
-                        "Calendar",
+                        "Files",
                         variant="primary",
                         size=16,
                         weight=ft.FontWeight.W_500
                     ),
-                    ft.Container(height=8),  # Slightly more spacing
-                    self.calendar_component.get_container()
+                    ft.Container(height=8),
+                    ThemedContainer(
+                        self.theme_manager,
+                        variant="surface",
+                        content=ft.Text(
+                            "Journal files will appear here",
+                            color=colors.text_muted,
+                            size=12
+                        ),
+                        padding=ft.padding.all(16),
+                        border_radius=8,
+                        border=ft.border.all(1, colors.border_subtle),
+                        expand=True
+                    )
                 ],
                 spacing=0,
-                tight=True
+                expand=True
             ),
-            width=300,  # Slightly narrower
-            padding=ft.padding.only(top=16, left=16, right=8, bottom=16)  # Reduced padding
+            padding=ft.padding.all(16),
+            expand=True
         )
         
-        # Right panel - Journal Editor
-        self.editor_panel = ThemedContainer(
-            self.theme_manager,
-            variant="background",
+        # Left sidebar container
+        left_sidebar = ft.Container(
             content=ft.Column(
                 controls=[
-                    ft.Row(
-                        controls=[
-                            ThemedText(
-                                self.theme_manager,
-                                "Journal Entry",
-                                variant="primary",
-                                size=16,
-                                weight=ft.FontWeight.W_500
-                            ),
-                            ThemedText(
-                                self.theme_manager,
-                                self.selected_date.strftime("%b %d, %Y"),  # Changed to 3-character month like calendar
-                                variant="secondary",
-                                size=14
-                            )
-                        ],
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                        vertical_alignment=ft.CrossAxisAlignment.CENTER
+                    calendar_section,
+                    ft.Container(
+                        height=1,
+                        bgcolor=colors.border_subtle
                     ),
+                    files_section
+                ],
+                spacing=0,
+                expand=True
+            ),
+            width=280,
+            border=ft.border.only(right=ft.border.BorderSide(1, colors.border_subtle))
+        )
+        
+        # Main content area - Journal Entry and AI Reflection
+        # Journal Entry section
+        journal_entry_section = ft.Container(
+            content=ft.Column(
+                controls=[
+                    ThemedText(
+                        self.theme_manager,
+                        "Journal Entry",
+                        variant="primary",
+                        size=16,
+                        weight=ft.FontWeight.W_500
+                    ),
+                    ft.Container(height=8),
                     ThemedContainer(
                         self.theme_manager,
                         variant="surface",
@@ -245,27 +270,15 @@ class JournalVaultApp:
                         expand=True
                     )
                 ],
-                spacing=12,
+                spacing=0,
                 expand=True
             ),
-            expand=True,
-            padding=ft.padding.all(20)
+            padding=ft.padding.all(16),
+            expand=True
         )
         
-        editor_panel = self.editor_panel
-        
-        # Main content area (calendar + editor)
-        main_content = ft.Row(
-            controls=[calendar_panel, editor_panel],
-            spacing=0,
-            expand=True,
-            vertical_alignment=ft.CrossAxisAlignment.START
-        )
-        
-        # Bottom panel - AI Reflection
-        ai_panel = ThemedContainer(
-            self.theme_manager,
-            variant="surface",
+        # AI Reflection section
+        ai_reflection_section = ft.Container(
             content=ft.Column(
                 controls=[
                     ThemedText(
@@ -275,27 +288,66 @@ class JournalVaultApp:
                         size=16,
                         weight=ft.FontWeight.W_500
                     ),
-                    ThemedText(
+                    ft.Container(height=8),
+                    ThemedContainer(
                         self.theme_manager,
-                        "AI-powered insights and reflection questions will appear here.",
-                        variant="secondary",
-                        size=12
+                        variant="surface",
+                        content=ft.Column(
+                            controls=[
+                                ThemedText(
+                                    self.theme_manager,
+                                    "AI-powered insights and reflection questions will appear here.",
+                                    variant="secondary",
+                                    size=12
+                                )
+                            ],
+                            expand=True
+                        ),
+                        padding=ft.padding.all(20),
+                        border_radius=8,
+                        border=ft.border.all(1, colors.border_subtle),
+                        shadow=ft.BoxShadow(
+                            spread_radius=0,
+                            blur_radius=2,
+                            color=colors.shadow_light,
+                            offset=ft.Offset(0, 1),
+                        ),
+                        expand=True
                     )
                 ],
-                spacing=12,
-                tight=True
+                spacing=0,
+                expand=True
             ),
-            height=220,
-            padding=ft.padding.all(20),
-            border=ft.border.only(top=ft.border.BorderSide(1, colors.border_subtle))
+            padding=ft.padding.all(16),
+            expand=True
         )
         
-        # Main layout
+        # Main content area container
+        main_content = ft.Container(
+            content=ft.Column(
+                controls=[
+                    journal_entry_section,
+                    ft.Container(
+                        height=1,
+                        bgcolor=colors.border_subtle
+                    ),
+                    ai_reflection_section
+                ],
+                spacing=0,
+                expand=True
+            ),
+            expand=True
+        )
+        
+        # Main layout with left sidebar and main content
         main_layout = ft.Column(
             controls=[
                 header,
-                main_content,
-                ai_panel
+                ft.Row(
+                    controls=[left_sidebar, main_content],
+                    spacing=0,
+                    expand=True
+                )
             ],
             spacing=0,
             expand=True
@@ -306,15 +358,6 @@ class JournalVaultApp:
     def _on_date_selected(self, selected_date: datetime) -> None:
         """Handle date selection from calendar."""
         self.selected_date = selected_date
-        
-        # Update the editor panel header with the new date
-        if self.editor_panel and len(self.editor_panel.content.controls) > 0:
-            header_row = self.editor_panel.content.controls[0]
-            if isinstance(header_row, ft.Row) and len(header_row.controls) > 1:
-                date_text = header_row.controls[1]
-                if hasattr(date_text, 'value'):
-                    date_text.value = selected_date.strftime("%b %d, %Y")  # Consistent with calendar format
-                    date_text.update()
         
         # Here you would typically load the entry for the selected date
         # For now, we'll just update the UI to reflect the selection
