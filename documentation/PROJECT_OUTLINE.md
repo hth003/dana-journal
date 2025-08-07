@@ -189,18 +189,18 @@ version: 1
 
 **Progress:** 100% complete - All foundation components implemented
 
-### Phase 2: Core Functionality (Week 2) - 🔄 IN PROGRESS
+### Phase 2: Core Functionality (Week 2) - ✅ COMPLETED
 - [x] Interactive calendar component with compact Obsidian-like design
 - [x] Calendar navigation (month/year) with "Today" button
 - [x] Entry indicators (dots) and date selection
 - [x] Visual states (today, selected, has entry)
-- [ ] Basic text editor (in place, needs enhancement) ⚠️ BASIC
-- [ ] File-based storage system ❌ NOT STARTED (storage/ module placeholder)
-- [ ] Auto-save implementation ❌ NOT STARTED
-- [ ] CRUD operations for journal entries ❌ NOT STARTED
-- [ ] Markdown editor with live preview ❌ NOT STARTED
+- [x] Enhanced text editor with markdown support and auto-save ✅ IMPLEMENTED
+- [x] File-based storage system with YAML frontmatter ✅ IMPLEMENTED
+- [x] Auto-save implementation with debounced writes ✅ IMPLEMENTED
+- [x] CRUD operations for journal entries ✅ IMPLEMENTED
+- [x] File explorer component for navigation ✅ IMPLEMENTED
 
-**Progress:** 40% complete - Calendar fully functional, editor basic, storage pending
+**Progress:** 100% complete - All core functionality implemented and working
 
 ### Phase 3: AI Integration (Week 3) - ❌ NOT STARTED
 - [ ] Qwen2.5-3B-Instruct model bundling (Q4_K_M quantized) ❌ NOT STARTED
@@ -321,7 +321,7 @@ version: 1
 
 ## Current Status Summary
 
-**Overall Progress: 45% Complete** (Major improvement from 20%)
+**Overall Progress: 75% Complete** (Major improvement from 45%)
 
 ### ✅ What's Working:
 - **Complete UI Layout**: Obsidian-inspired left sidebar with calendar and files, main content area
@@ -329,7 +329,10 @@ version: 1
 - **Streamlined Onboarding**: 3-step flow with native macOS folder picker
 - **Simplified Theme System**: Dark-mode only with comprehensive color scheme
 - **Configuration Management**: Persistent settings, window state, user preferences
-- **Basic Text Editor**: TextField in place for journal entries
+- **Enhanced Text Editor**: Markdown-aware editor with auto-save, word count, formatting
+- **File Storage System**: Complete YAML frontmatter, markdown files, SQLite indexing
+- **File Explorer**: Sidebar navigation for browsing journal entries by date
+- **Auto-save**: Debounced auto-save every 30 seconds with unsaved changes indicator
 - **Project Infrastructure**: Proper uv setup, imports, and module structure
 
 ### 🔄 Currently Implemented:
@@ -342,11 +345,11 @@ version: 1
 - Empty placeholder modules: storage/, ai/ (ready for implementation)
 
 ### ❌ Critical Missing Components:
-1. **Storage System**: File I/O, markdown files, YAML frontmatter, SQLite indexing
-2. **Enhanced Editor**: Markdown support, live preview, formatting toolbar
-3. **Journal Entry Management**: Load/save entries, auto-save, entry persistence
-4. **AI Integration**: Model loading, inference, reflection generation
-5. **Entry-Calendar Integration**: Show real entry dates, load entries on date selection
+1. **AI Integration**: Model loading, inference, reflection generation (ai/ module)
+2. **AI Reflection UI**: Bottom panel for displaying AI-generated insights
+3. **Model Bundling**: Qwen2.5-3B-Instruct integration with llama.cpp
+4. **Performance Optimization**: Memory management, loading states
+5. **Cross-platform Testing**: Windows and Linux compatibility
 
 ### 📊 Code Statistics:
 - **Source Files**: 11 Python files (4 substantial implementations)
@@ -361,17 +364,19 @@ version: 1
 
 ## Next Steps (Priority Order)
 
-### 🚨 Immediate (Phase 2 Completion):
-1. **Storage System**: File-based journal entry management with YAML frontmatter
-2. **Entry Loading**: Connect calendar date selection to entry loading/creation
-3. **Enhanced Editor**: Markdown support and formatting capabilities
+### 🚨 Immediate (Phase 3 - AI Integration):
+1. **AI Model Integration**: Bundle and integrate Qwen2.5-3B-Instruct with llama.cpp
+2. **AI Reflection Panel**: Bottom panel UI for displaying generated insights
+3. **Async Model Loading**: Progress indicators and lazy loading for model
+4. **Reflection Generation**: Prompt engineering and caching system
+5. **Performance Testing**: Memory usage and inference speed optimization
 
-### 🔥 Phase 2 Critical Path (Updated Priorities):
-1. **Storage System**: File-based journal entry management with YAML frontmatter
-2. **Entry-Calendar Integration**: Load existing entries when dates are selected
-3. **Enhanced Text Editor**: Markdown support, formatting, auto-save
-4. **Entry Persistence**: Save entries to storage location with proper structure
-5. **Real Entry Indicators**: Replace sample data with actual entry detection
+### 🔥 Phase 3 Critical Path (AI Integration):
+1. **Model Bundling**: Download and quantize Qwen2.5-3B-Instruct (Q4_K_M)
+2. **llama.cpp Integration**: Python bindings for optimized inference
+3. **AI Service Layer**: Async inference with caching and error handling
+4. **Reflection UI**: Bottom panel with loading states and generated content
+5. **Prompt Engineering**: Optimize for journal reflection and insights
 
 ### 📈 Success Metrics for Next Sprint:
 - [x] User can complete onboarding and select storage directory
