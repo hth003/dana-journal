@@ -69,10 +69,14 @@ src/journal_vault/
 
 **Theme System (ui/theme.py)**: Dark-mode only theme with consistent color palette. Provides `ThemedContainer`, `ThemedText`, and `ThemedCard` components for consistent styling.
 
-**Onboarding Flow (ui/components/onboarding.py)**: Streamlined 3-step process:
+**Onboarding Flow (ui/components/onboarding.py)**: Enhanced 3-step process:
 1. Welcome and feature overview
 2. Privacy explanation 
-3. Storage location selection with native macOS dialog
+3. **Dual-mode vault setup** with radio button selection:
+   - Create New Vault: Name + parent directory selection
+   - Load Existing Vault: Smart detection of existing vault structures
+   - Real-time path preview and validation
+   - Context-aware completion buttons
 
 **Calendar Component (ui/components/calendar.py)**: Interactive month navigation with entry indicators, date selection, and "Today" button. Integrates with journal entry system.
 
@@ -106,9 +110,11 @@ The application follows an Obsidian-inspired design:
 - Complete Flet-based application structure
 - Dark theme system with reusable components  
 - Interactive calendar with navigation and entry indicators
-- 3-step onboarding with native folder selection
-- Configuration persistence system
-- Basic text editor integration
+- **Enhanced 3-step onboarding** with dual-mode vault setup
+- **Smart vault detection** for existing journal folders
+- **Real-time path preview** with proper macOS folder selection
+- Configuration persistence system with vault metadata
+- Comprehensive error handling and user feedback
 
 ### In Progress 🔄
 - File manager and storage system (`storage/` modules)

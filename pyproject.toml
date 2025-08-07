@@ -8,9 +8,10 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "flet>=0.24.1",
+    "flet[all]==0.28.3",
     "pydantic>=2.8.0",
     "python-dateutil>=2.9.0",
+    "pyyaml>=6.0.2",
 ]
 
 [project.optional-dependencies]
@@ -38,3 +39,11 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
+    "ruff>=0.12.7",
+]

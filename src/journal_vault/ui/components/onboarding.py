@@ -7,8 +7,9 @@ storage location selection, theme preference, and optional first entry creation.
 
 import os
 from typing import Callable, Optional
+from pathlib import Path
 import flet as ft
-from ..theme import ThemeManager, ThemedContainer, ThemedText, ThemedCard, ThemedButton, SPACING
+from ..theme import ThemeManager, ThemedContainer, ThemedText, SPACING
 from ...storage.file_manager import FileManager
 
 
@@ -21,6 +22,7 @@ class OnboardingFlow:
         self.page = page
         self.current_step = 0
         self.total_steps = 3
+        self.vault_mode = "create"  # "create" or "load"
         self.onboarding_data = {
             'storage_path': None,
             'vault_name': 'My Journal',
@@ -279,7 +281,7 @@ class OnboardingFlow:
         )
     
     def _create_storage_step(self) -> ft.Column:
-        """Create compact vault setup step with name and location selection."""
+        """Create dual-mode vault setup step with clear create/load distinction."""
         colors = self.theme_manager.colors
         
         # Create UI components
@@ -287,149 +289,70 @@ class OnboardingFlow:
         
         return ft.Column(
             controls=[
-                # Compact header with smaller icon
+                # Header
                 ft.Container(
                     content=ft.Icon(
-                        ft.Icons.CREATE_NEW_FOLDER_ROUNDED,
-                        size=50,  # Reduced from 80px to 50px
-                        color=colors.accent
+                        ft.Icons.CREATE_NEW_FOLDER_ROUNDED if self.vault_mode == "create" else ft.Icons.FOLDER_OPEN,
+                        size=50,
+                        color=colors.primary if self.vault_mode == "create" else colors.accent
                     ),
-                    margin=ft.margin.only(bottom=15)  # Reduced margin
+                    margin=ft.margin.only(bottom=15)
                 ),
                 ThemedText(
                     self.theme_manager,
                     "Set Up Your Vault",
                     variant="primary",
-                    size=24,  # Reduced from 28 to 24
+                    size=24,
                     weight=ft.FontWeight.BOLD,
                     text_align=ft.TextAlign.CENTER
                 ),
-                ft.Container(height=8),  # Reduced spacing
+                ft.Container(height=8),
                 ThemedText(
                     self.theme_manager,
-                    "Choose a name and location for your journal vault",
+                    "Choose how to set up your journal vault",
                     variant="secondary",
-                    size=14,  # Reduced from 16 to 14
+                    size=14,
                     text_align=ft.TextAlign.CENTER
                 ),
-                ft.Container(height=16),  # Reduced spacing
+                ft.Container(height=20),
                 
-                # Combined compact layout - single container for both sections
-                ThemedContainer(
-                    self.theme_manager,
-                    variant="surface",
-                    content=ft.Column(
-                        controls=[
-                            # Vault Name Section - more compact
-                            ft.Row(
-                                controls=[
-                                    ft.Icon(ft.Icons.EDIT_OUTLINED, color=colors.primary, size=20),
-                                    ThemedText(
-                                        self.theme_manager,
-                                        "Vault Name:",
-                                        variant="primary",
-                                        size=14,
-                                        weight=ft.FontWeight.W_600
-                                    )
-                                ],
-                                spacing=8,
-                                alignment=ft.MainAxisAlignment.START
-                            ),
-                            ft.Container(height=8),
-                            self.vault_name_field,
-                            
-                            ft.Container(height=16),  # Divider spacing
-                            ft.Divider(color=colors.border_subtle, height=1),
-                            ft.Container(height=16),
-                            
-                            # Storage Location Section - more compact
-                            ft.Row(
-                                controls=[
-                                    ft.Icon(ft.Icons.FOLDER_OUTLINED, color=colors.primary, size=20),
-                                    ThemedText(
-                                        self.theme_manager,
-                                        "Storage Location:",
-                                        variant="primary",
-                                        size=14,
-                                        weight=ft.FontWeight.W_600
-                                    )
-                                ],
-                                spacing=8,
-                                alignment=ft.MainAxisAlignment.START
-                            ),
-                            ft.Container(height=8),
-                            self.storage_location_text,
-                            ft.Container(height=12),
-                            ft.Row(
-                                controls=[
-                                    ft.ElevatedButton(
-                                        text="Browse",
-                                        icon=ft.Icons.FOLDER_OPEN,
-                                        on_click=self._select_parent_directory,
-                                        style=ft.ButtonStyle(
-                                            bgcolor=colors.primary,
-                                            color=colors.text_on_primary,
-                                            text_style=ft.TextStyle(size=13, weight=ft.FontWeight.W_500),
-                                            padding=ft.padding.symmetric(horizontal=16, vertical=8)
-                                        )
-                                    ),
-                                    ft.OutlinedButton(
-                                        text="Use Documents",
-                                        icon=ft.Icons.HOME,
-                                        on_click=self._use_documents_folder,
-                                        style=ft.ButtonStyle(
-                                            side=ft.BorderSide(1, colors.primary),
-                                            color=colors.primary,
-                                            text_style=ft.TextStyle(size=13, weight=ft.FontWeight.W_500),
-                                            padding=ft.padding.symmetric(horizontal=16, vertical=8)
-                                        )
-                                    )
-                                ],
-                                spacing=8,
-                                alignment=ft.MainAxisAlignment.CENTER
-                            )
-                        ],
-                        spacing=0
+                # Mode Selection Radio Buttons
+                ft.Container(
+                    content=ft.RadioGroup(
+                        content=ft.Row(
+                            controls=[
+                                ft.Radio(
+                                    value="create",
+                                    label="Create New Vault",
+                                    active_color=colors.primary
+                                ),
+                                ft.Radio(
+                                    value="load",
+                                    label="Load Existing Vault",
+                                    active_color=colors.accent
+                                )
+                            ],
+                            alignment=ft.MainAxisAlignment.CENTER,
+                            spacing=40
+                        ),
+                        value=self.vault_mode,
+                        on_change=self._on_mode_change
                     ),
-                    padding=ft.padding.all(SPACING["lg"]),
-                    border_radius=12,
-                    border=ft.border.all(1, colors.border_subtle)
+                    margin=ft.margin.only(bottom=20)
                 ),
                 
-                ft.Container(height=12),  # Reduced spacing
+                # Dynamic content based on mode
+                self._get_mode_content(),
                 
-                # Path Preview Section - more compact
-                ThemedContainer(
-                    self.theme_manager,
-                    variant="surface_variant",
-                    content=ft.Row(
-                        controls=[
-                            ft.Icon(ft.Icons.PREVIEW, color=colors.primary, size=16),
-                            ft.Column(
-                                controls=[
-                                    ThemedText(
-                                        self.theme_manager,
-                                        "Vault will be created at:",
-                                        variant="secondary",
-                                        size=12
-                                    ),
-                                    self.path_preview_text
-                                ],
-                                spacing=2,
-                                expand=True
-                            )
-                        ],
-                        spacing=8,
-                        vertical_alignment=ft.CrossAxisAlignment.CENTER
-                    ),
-                    padding=ft.padding.all(SPACING["sm"]),  # Reduced padding
-                    border_radius=8
-                ),
+                ft.Container(height=12),
                 
-                ft.Container(height=20),  # Navigation button spacing
+                # Path Preview Section
+                self._create_path_preview(),
+                
+                ft.Container(height=20),
                 self._create_step_buttons(
-                    next_text="Create Vault",
-                    show_next=bool(self.onboarding_data.get('parent_directory')),
+                    next_text="Create Vault" if self.vault_mode == "create" else "Complete Setup",
+                    show_next=self._is_ready_to_proceed(),
                     is_final=True
                 )
             ],
@@ -479,6 +402,273 @@ class OnboardingFlow:
             text_align=ft.TextAlign.LEFT
         )
     
+    def _on_mode_change(self, e) -> None:
+        """Handle vault mode change."""
+        self.vault_mode = e.control.value
+        # Refresh the storage step
+        self.container.content.controls[2] = self._get_current_step_content()
+        self.container.update()
+    
+    def _get_mode_content(self) -> ThemedContainer:
+        """Get content for the currently selected mode."""
+        if self.vault_mode == "create":
+            return self._create_mode_content()
+        else:
+            return self._load_mode_content()
+    
+    def _create_mode_content(self) -> ThemedContainer:
+        """Create content for 'Create New Vault' mode."""
+        colors = self.theme_manager.colors
+        
+        return ThemedContainer(
+            self.theme_manager,
+            variant="surface",
+            content=ft.Column(
+                controls=[
+                    # Vault Name Section
+                    ft.Row(
+                        controls=[
+                            ft.Icon(ft.Icons.EDIT_OUTLINED, color=colors.primary, size=20),
+                            ThemedText(
+                                self.theme_manager,
+                                "Vault Name:",
+                                variant="primary",
+                                size=14,
+                                weight=ft.FontWeight.W_600
+                            )
+                        ],
+                        spacing=8,
+                        alignment=ft.MainAxisAlignment.START
+                    ),
+                    ft.Container(height=8),
+                    self.vault_name_field,
+                    
+                    ft.Container(height=16),
+                    ft.Divider(color=colors.border_subtle, height=1),
+                    ft.Container(height=16),
+                    
+                    # Storage Location Section
+                    ft.Row(
+                        controls=[
+                            ft.Icon(ft.Icons.FOLDER_OUTLINED, color=colors.primary, size=20),
+                            ThemedText(
+                                self.theme_manager,
+                                "Storage Location:",
+                                variant="primary",
+                                size=14,
+                                weight=ft.FontWeight.W_600
+                            )
+                        ],
+                        spacing=8,
+                        alignment=ft.MainAxisAlignment.START
+                    ),
+                    ft.Container(height=8),
+                    self.storage_location_text,
+                    ft.Container(height=12),
+                    ft.Row(
+                        controls=[
+                            ft.ElevatedButton(
+                                text="Browse",
+                                icon=ft.Icons.FOLDER_OPEN,
+                                on_click=self._select_parent_directory,
+                                style=ft.ButtonStyle(
+                                    bgcolor=colors.primary,
+                                    color=colors.text_on_primary,
+                                    text_style=ft.TextStyle(size=13, weight=ft.FontWeight.W_500),
+                                    padding=ft.padding.symmetric(horizontal=16, vertical=8)
+                                )
+                            ),
+                            ft.OutlinedButton(
+                                text="Use Documents",
+                                icon=ft.Icons.HOME,
+                                on_click=self._use_documents_folder,
+                                style=ft.ButtonStyle(
+                                    side=ft.BorderSide(1, colors.primary),
+                                    color=colors.primary,
+                                    text_style=ft.TextStyle(size=13, weight=ft.FontWeight.W_500),
+                                    padding=ft.padding.symmetric(horizontal=16, vertical=8)
+                                )
+                            )
+                        ],
+                        spacing=8,
+                        alignment=ft.MainAxisAlignment.CENTER
+                    )
+                ],
+                spacing=0
+            ),
+            padding=ft.padding.all(SPACING["lg"]),
+            border_radius=12,
+            border=ft.border.all(1, colors.border_subtle)
+        )
+    
+    def _load_mode_content(self) -> ThemedContainer:
+        """Create content for 'Load Existing Vault' mode."""
+        colors = self.theme_manager.colors
+        
+        # Check if we have a loaded vault path and its type
+        loaded_vault = self.onboarding_data.get('loaded_vault_path')
+        vault_type = self.onboarding_data.get('vault_type', '')
+        
+        # Create content based on whether a vault is selected
+        if loaded_vault:
+            # Show selected vault info
+            vault_info_text = f"Selected: {os.path.basename(loaded_vault)}"
+            if vault_type == "confirmed_vault":
+                status_text = "✅ Confirmed Journal Vault"
+                status_color = colors.success
+            elif vault_type == "compatible_vault":
+                status_text = "✅ Compatible Journal Vault"
+                status_color = colors.success
+            else:
+                status_text = "Selected vault"
+                status_color = colors.text_secondary
+                
+            vault_content = [
+                ThemedText(
+                    self.theme_manager,
+                    vault_info_text,
+                    variant="primary",
+                    size=13,
+                    weight=ft.FontWeight.W_500,
+                    text_align=ft.TextAlign.LEFT
+                ),
+                ft.Container(height=4),
+                ft.Row(
+                    controls=[
+                        ft.Icon(ft.Icons.CHECK_CIRCLE, color=status_color, size=16),
+                        ThemedText(
+                            self.theme_manager,
+                            status_text,
+                            variant="secondary",
+                            size=12,
+                            text_align=ft.TextAlign.LEFT
+                        )
+                    ],
+                    spacing=4
+                )
+            ]
+        else:
+            # Show instruction text
+            vault_content = [
+                ThemedText(
+                    self.theme_manager,
+                    "Click below to browse for your existing journal vault folder",
+                    variant="secondary",
+                    size=13,
+                    text_align=ft.TextAlign.LEFT
+                ),
+                ft.Container(height=4),
+                ThemedText(
+                    self.theme_manager,
+                    "Valid vaults contain '.journal_vault' or 'entries' folder structure",
+                    variant="secondary",
+                    size=11,
+                    text_align=ft.TextAlign.LEFT
+                )
+            ]
+        
+        return ThemedContainer(
+            self.theme_manager,
+            variant="surface",
+            content=ft.Column(
+                controls=[
+                    # Load Vault Section
+                    ft.Row(
+                        controls=[
+                            ft.Icon(ft.Icons.FOLDER_SPECIAL, color=colors.accent, size=20),
+                            ThemedText(
+                                self.theme_manager,
+                                "Select Your Existing Vault:",
+                                variant="primary",
+                                size=14,
+                                weight=ft.FontWeight.W_600
+                            )
+                        ],
+                        spacing=8,
+                        alignment=ft.MainAxisAlignment.START
+                    ),
+                    ft.Container(height=12),
+                    
+                    # Dynamic vault selection info
+                    *vault_content,
+                    
+                    ft.Container(height=16),
+                    
+                    # Browse button
+                    ft.ElevatedButton(
+                        text="Browse for Vault" if not loaded_vault else "Choose Different Vault",
+                        icon=ft.Icons.UPLOAD_FILE,
+                        on_click=self._load_existing_vault,
+                        style=ft.ButtonStyle(
+                            bgcolor=colors.accent,
+                            color=colors.text_on_primary,
+                            text_style=ft.TextStyle(size=13, weight=ft.FontWeight.W_500),
+                            padding=ft.padding.symmetric(horizontal=16, vertical=8)
+                        )
+                    )
+                ],
+                spacing=0
+            ),
+            padding=ft.padding.all(SPACING["lg"]),
+            border_radius=12,
+            border=ft.border.all(1, colors.border_subtle)
+        )
+    
+    def _create_path_preview(self) -> ThemedContainer:
+        """Create the path preview section."""
+        colors = self.theme_manager.colors
+        
+        if self.vault_mode == "create":
+            preview_text = "Vault will be created at:"
+            path_text = self._get_preview_path()
+        else:
+            preview_text = "Vault will be loaded from:"
+            loaded_vault = self.onboarding_data.get('loaded_vault_path')
+            path_text = loaded_vault or "[Select an existing vault]"
+        
+        # Store reference to path text for updates
+        self.current_path_text = ThemedText(
+            self.theme_manager,
+            path_text,
+            variant="primary" if path_text != "[Select an existing vault]" else "secondary",
+            size=12,
+            weight=ft.FontWeight.W_500
+        )
+        
+        return ThemedContainer(
+            self.theme_manager,
+            variant="surface_variant",
+            content=ft.Row(
+                controls=[
+                    ft.Icon(ft.Icons.PREVIEW, color=colors.primary, size=16),
+                    ft.Column(
+                        controls=[
+                            ThemedText(
+                                self.theme_manager,
+                                preview_text,
+                                variant="secondary",
+                                size=12
+                            ),
+                            self.current_path_text
+                        ],
+                        spacing=2,
+                        expand=True
+                    )
+                ],
+                spacing=8,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER
+            ),
+            padding=ft.padding.all(SPACING["sm"]),
+            border_radius=8
+        )
+    
+    def _is_ready_to_proceed(self) -> bool:
+        """Check if ready to proceed based on current mode."""
+        if self.vault_mode == "create":
+            return bool(self.onboarding_data.get('parent_directory')) and bool(self.onboarding_data.get('vault_name'))
+        else:  # load mode
+            return bool(self.onboarding_data.get('loaded_vault_path'))
+    
     def _get_preview_path(self) -> str:
         """Get the preview path for the vault with proper path handling."""
         parent_dir = self.onboarding_data.get('parent_directory')
@@ -515,12 +705,15 @@ class OnboardingFlow:
     
     def _update_path_preview(self) -> None:
         """Update the path preview display."""
-        if hasattr(self, 'path_preview_text'):
-            self.path_preview_text.value = self._get_preview_path()
-            try:
-                self.path_preview_text.update()
-            except Exception:
-                pass  # Ignore update errors
+        # Update the path text directly without recreating the entire UI
+        try:
+            if hasattr(self, 'current_path_text') and self.current_path_text:
+                if self.vault_mode == "create":
+                    new_path = self._get_preview_path()
+                    self.current_path_text.value = new_path
+                    self.current_path_text.update()
+        except Exception:
+            pass  # Ignore update errors
     
     def _update_final_storage_path(self) -> None:
         """Update the final storage path when both parent dir and vault name are available."""
@@ -617,22 +810,31 @@ class OnboardingFlow:
     
     def _convert_alias_path(self, alias_path: str) -> str:
         """Convert macOS alias path to regular path."""
-        selected_path = alias_path.replace("alias ", "")
+        # Remove "alias " prefix
+        path_part = alias_path.replace("alias ", "").strip()
         
         # Split by colons and reconstruct the path
-        parts = selected_path.split(":")
-        if len(parts) >= 4:  # Should have at least Macintosh HD, Users, username, Documents
-            # Skip "Macintosh HD" and "Users", start from username
-            username = parts[2]
-            folder = parts[3]
-            selected_path = f"/Users/{username}/{folder}"
-        else:
-            # Fallback: just replace colons with slashes
-            selected_path = selected_path.replace(":", "/")
-            # Remove trailing slash
-            if selected_path.endswith("/"):
-                selected_path = selected_path[:-1]
+        parts = path_part.split(":")
         
+        if len(parts) >= 2:
+            # Standard macOS alias format: "Macintosh HD:Users:username:folder:subfolder"
+            # Convert to Unix path: /Users/username/folder/subfolder
+            if parts[0] == "Macintosh HD" and len(parts) >= 3:
+                # Standard case: skip "Macintosh HD", convert rest
+                unix_parts = parts[1:]  # Skip "Macintosh HD"
+                selected_path = "/" + "/".join(unix_parts)
+            else:
+                # Fallback: assume it's already a partial path
+                selected_path = "/" + "/".join(parts)
+        else:
+            # Single part, assume it's a folder name in root
+            selected_path = "/" + path_part
+        
+        # Clean up the path
+        selected_path = selected_path.replace("//", "/")  # Remove double slashes
+        if selected_path.endswith("/") and len(selected_path) > 1:
+            selected_path = selected_path[:-1]  # Remove trailing slash
+            
         return selected_path
     
     def _create_step_buttons(self, next_text: str = "Continue", show_next: bool = True, is_final: bool = False) -> ft.Row:
@@ -848,18 +1050,30 @@ class OnboardingFlow:
             self._complete_onboarding(e)
     
     def _complete_onboarding(self, e) -> None:
-        """Complete the onboarding process with vault safety checks."""
+        """Complete the onboarding process based on selected mode."""
         try:
-            storage_path = self.onboarding_data.get('storage_path')
-            if not storage_path:
-                self._show_storage_error("No storage location configured.")
-                return
+            if self.vault_mode == "create":
+                # Create new vault
+                storage_path = self.onboarding_data.get('storage_path')
+                if not storage_path:
+                    self._show_storage_error("No storage location configured.")
+                    return
+                
+                # Check if folder already exists
+                if os.path.exists(storage_path):
+                    self._show_folder_exists_error()
+                else:
+                    self._create_new_vault(storage_path)
             
-            # Check if vault already exists
-            if FileManager.is_existing_vault(storage_path):
-                self._show_existing_vault_dialog(storage_path)
-            else:
-                self._create_new_vault(storage_path)
+            else:  # load mode
+                # Load existing vault
+                loaded_vault_path = self.onboarding_data.get('loaded_vault_path')
+                if not loaded_vault_path:
+                    self._show_storage_error("No vault selected to load.")
+                    return
+                
+                # Vault already validated in _load_existing_vault method
+                self.on_complete(self.onboarding_data)
                 
         except Exception as ex:
             self._show_storage_error(f"Error completing setup: {str(ex)}")
@@ -916,7 +1130,7 @@ class OnboardingFlow:
                 title=ft.Text("Existing Vault Found"),
                 content=ft.Column(
                     controls=[
-                        ft.Text(f"A Journal Vault already exists at:"),
+                        ft.Text("A Journal Vault already exists at:"),
                         ft.Text(vault_path, weight=ft.FontWeight.BOLD),
                         ft.Container(height=10),
                         ft.Text("What would you like to do?")
@@ -955,6 +1169,162 @@ class OnboardingFlow:
                 self.on_complete(self.onboarding_data)
         except Exception as ex:
             self._show_storage_error(f"Error handling existing vault: {str(ex)}")
+    
+    def _show_folder_exists_error(self) -> None:
+        """Show error dialog when selected folder already exists."""
+        try:
+            def close_dialog(e):
+                dialog.open = False
+                if self.page:
+                    self.page.update()
+            
+            dialog = ft.AlertDialog(
+                title=ft.Text("Folder Already Exists"),
+                content=ft.Column(
+                    controls=[
+                        ft.Text("A folder with this name already exists in the selected location."),
+                        ft.Container(height=10),
+                        ft.Text("Please choose a different name or select a different parent directory.")
+                    ],
+                    tight=True,
+                    spacing=10
+                ),
+                actions=[
+                    ft.TextButton("OK", on_click=close_dialog)
+                ],
+                actions_alignment=ft.MainAxisAlignment.END
+            )
+            
+            # Show dialog
+            if self.page:
+                self.page.dialog = dialog
+                dialog.open = True
+                self.page.update()
+        except Exception as ex:
+            self._show_storage_error(f"Error showing folder exists dialog: {str(ex)}")
+    
+    def _can_load_as_vault(self, path: str) -> tuple[bool, str]:
+        """Check if a folder can be loaded as a vault with smart detection.
+        
+        Returns:
+            tuple[bool, str]: (is_valid, vault_type)
+            vault_type can be: "confirmed_vault", "compatible_vault", "invalid_structure"
+        """
+        try:
+            vault_path = Path(path)
+            
+            if not vault_path.exists() or not vault_path.is_dir():
+                return False, "invalid_structure"
+            
+            # Check for confirmed vault (has .journal_vault directory)
+            journal_vault_dir = vault_path / ".journal_vault"
+            if journal_vault_dir.exists() and journal_vault_dir.is_dir():
+                return True, "confirmed_vault"
+            
+            # Check for compatible vault (has entries structure)
+            entries_dir = vault_path / "entries"
+            if entries_dir.exists() and entries_dir.is_dir():
+                # Look for YYYY/MM/*.md files
+                has_journal_files = False
+                for year_dir in entries_dir.iterdir():
+                    if year_dir.is_dir() and year_dir.name.isdigit():
+                        for month_dir in year_dir.iterdir():
+                            if month_dir.is_dir() and month_dir.name.isdigit():
+                                # Check for .md files
+                                md_files = list(month_dir.glob("*.md"))
+                                if md_files:
+                                    has_journal_files = True
+                                    break
+                        if has_journal_files:
+                            break
+                
+                if has_journal_files:
+                    return True, "compatible_vault"
+            
+            # Check if folder is empty (not valid for loading)
+            try:
+                if not any(vault_path.iterdir()):
+                    return False, "empty_folder"
+            except PermissionError:
+                return False, "permission_denied"
+            
+            # Has content but not journal structure
+            return False, "invalid_structure"
+            
+        except Exception:
+            return False, "invalid_structure"
+    
+    def _load_existing_vault(self, e) -> None:
+        """Handle loading an existing vault."""
+        try:
+            # Update button text to show it's working
+            if hasattr(e, 'control'):
+                e.control.text = "Opening..."
+                e.control.update()
+            
+            # Use native macOS dialog via osascript
+            import subprocess
+            result = subprocess.run([
+                "osascript", "-e", 
+                'choose folder with prompt "Select Existing Journal Vault Folder"'
+            ], capture_output=True, text=True, timeout=30)
+            
+            if result.returncode == 0:
+                selected_path = result.stdout.strip()
+                
+                # Convert alias path to regular path if needed
+                if selected_path.startswith("alias "):
+                    selected_path = self._convert_alias_path(selected_path)
+                
+                # Use smart vault detection
+                can_load, vault_type = self._can_load_as_vault(selected_path)
+                
+                if can_load:
+                    # Set the loaded vault path and update UI
+                    self.onboarding_data['loaded_vault_path'] = selected_path
+                    self.onboarding_data['storage_path'] = selected_path
+                    self.onboarding_data['vault_name'] = os.path.basename(selected_path)
+                    self.onboarding_data['vault_type'] = vault_type  # Store for later reference
+                    
+                    # Refresh the storage step to show the updated path
+                    self.container.content.controls[2] = self._get_current_step_content()
+                    self.container.update()
+                else:
+                    # Show appropriate error message based on vault type
+                    if vault_type == "empty_folder":
+                        self._show_storage_error("Selected folder is empty. Please select a folder with existing journal entries or create a new vault instead.")
+                    elif vault_type == "permission_denied":
+                        self._show_storage_error("Cannot access the selected folder. Please check permissions and try again.")
+                    else:  # invalid_structure
+                        self._show_storage_error("Selected folder is not a valid Journal Vault.\n\nValid vaults should contain either:\n• A '.journal_vault' directory (confirmed vault)\n• An 'entries' folder with journal files (compatible vault)")
+            else:
+                # User cancelled - do nothing
+                pass
+            
+            # Reset button text
+            try:
+                if hasattr(e, 'control') and e.control:
+                    e.control.text = "Load Existing Vault"
+                    e.control.update()
+            except Exception:
+                pass
+            
+        except subprocess.TimeoutExpired:
+            try:
+                if hasattr(e, 'control') and e.control:
+                    e.control.text = "Load Existing Vault"
+                    e.control.update()
+            except Exception:
+                pass
+            self._show_storage_error("Folder selection dialog timed out. Please try again.")
+        except Exception as ex:
+            try:
+                if hasattr(e, 'control') and e.control:
+                    e.control.text = "Load Existing Vault"
+                    e.control.update()
+            except Exception:
+                pass
+            self._show_storage_error(f"Could not open folder picker: {str(ex)}")
     
     def _validate_storage_directory(self, path: str) -> bool:
         """Validate that the storage directory is accessible and writable."""

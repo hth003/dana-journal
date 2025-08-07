@@ -405,3 +405,49 @@ version: 1
 - **Quality:** Significantly better than smaller models for therapeutic-quality responses
 
 *Detailed model analysis available in LLM_ANALYSIS.md*
+
+Recent changes:
+## Latest Update: Enhanced Vault Setup Flow ✨
+
+### Dual-Mode Onboarding System (Latest Changes)
+
+  🎯 **Clear Create vs Load Distinction:**
+  - Radio button selection between "Create New Vault" and "Load Existing Vault"
+  - Mode-specific UI that adapts based on user's choice
+  - Context-aware final button: "Create Vault" vs "Complete Setup"
+  - Real-time path preview shows exactly what will happen
+
+  🛡️ **Smart Vault Detection:**
+  - **Confirmed Vaults**: Folders with `.journal_vault/` directory
+  - **Compatible Vaults**: Folders with `entries/YYYY/MM/*.md` structure
+  - Automatic `.journal_vault` initialization for compatible vaults
+  - Clear error messages for invalid folder selections
+
+  🔧 **Fixed Technical Issues:**
+  - Proper macOS alias path conversion for folder selection
+  - Real-time vault name updates without losing text field focus  
+  - Full path display instead of truncated folder names
+  - Enhanced folder existence detection with user feedback
+
+  🎨 **Improved User Experience:**
+  - No more silent "Create Vault" button failures
+  - Clear validation messages for different folder scenarios
+  - Visual indicators for confirmed vs compatible vaults
+  - Smooth mode switching without UI recreation
+
+### Previous Changes Summary:
+
+  🔒 **Safety Features:**
+  - Vault detection prevents overwrites of existing vaults
+  - Safety dialog shows options when existing vault is found
+  - Data protection ensures no accidental data loss
+
+  🎯 **Bundled Vault Creation:**
+  - Single setup step combines vault naming + location selection
+  - Pre-filled with "My Journal" as default name
+  - Real-time path preview shows exactly where vault will be created
+
+  ⚙️ **Technical Foundation:**
+  - FileManager auto-initialization creates `.journal_vault/` structure
+  - Configuration system stores vault names and paths
+  - Enhanced error handling with user-friendly messages
