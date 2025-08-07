@@ -63,6 +63,15 @@ class AppConfig:
         self._config_data['storage_path'] = path
         self._save_config()
     
+    def get_vault_name(self) -> Optional[str]:
+        """Get the configured vault name."""
+        return self._config_data.get('vault_name')
+    
+    def set_vault_name(self, name: str) -> None:
+        """Set the vault name."""
+        self._config_data['vault_name'] = name
+        self._save_config()
+    
     
     def get_window_state(self) -> Dict[str, Any]:
         """Get saved window state."""

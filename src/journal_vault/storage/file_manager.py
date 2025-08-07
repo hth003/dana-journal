@@ -52,6 +52,24 @@ class JournalEntry:
 class FileManager:
     """Manages file-based storage for journal entries."""
     
+    @staticmethod
+    def is_existing_vault(path: str) -> bool:
+        """Check if a directory contains an existing Journal Vault.
+        
+        Args:
+            path: Directory path to check
+            
+        Returns:
+            True if the path contains a Journal Vault, False otherwise
+        """
+        try:
+            vault_path = Path(path)
+            metadata_path = vault_path / ".journal_vault"
+            return metadata_path.exists() and metadata_path.is_dir()
+        except Exception:
+            # If any error occurs during detection, assume it's an existing vault (safer)
+            return True
+    
     def __init__(self, vault_path: str):
         """Initialize the file manager with vault path."""
         self.vault_path = Path(vault_path)

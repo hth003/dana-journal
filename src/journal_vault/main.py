@@ -108,6 +108,11 @@ class JournalVaultApp:
         self.storage_path = onboarding_data.get('storage_path')
         app_config.set_storage_path(self.storage_path)
         
+        # Save vault name
+        vault_name = onboarding_data.get('vault_name')
+        if vault_name:
+            app_config.set_vault_name(vault_name)
+        
         # No theme preference to save - always dark mode
         
         # Mark onboarding as complete
