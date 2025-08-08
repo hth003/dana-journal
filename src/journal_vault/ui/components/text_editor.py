@@ -106,29 +106,34 @@ class EnhancedTextEditor:
         theme_manager: ThemeManager,
         on_content_change: Optional[Callable[[str], None]] = None,
         on_save: Optional[Callable[[str], None]] = None,
+        on_ai_generate: Optional[Callable[[str], None]] = None,
         placeholder_text: str = "Start writing your thoughts...",
         auto_save_delay: float = 2.0
     ):
         self.theme_manager = theme_manager
         self.on_content_change = on_content_change
         self.on_save = on_save
+        self.on_ai_generate = on_ai_generate
         self.placeholder_text = placeholder_text
+        self.auto_save_delay = auto_save_delay
         
-        # State
+        # Content state
         self._content = ""
         self._last_saved_content = ""
         self._is_dirty = False
+        self._save_timer = None  # NEW
         
-        # Auto-save state
-        self._save_timer: Optional[threading.Timer] = None
-        self._save_delay = auto_save_delay
+        # Auto-save manager
+        self.auto_save_manager = AutoSaveManager(
+            save_callback=self._handle_auto_save,
+            delay_seconds=auto_save_delay
+        )
         
-        # Components
-        self.text_field: Optional[ft.TextField] = None
-        self.toolbar: Optional[ft.Row] = None
-        
-        # Managers
-        self.auto_save_manager = AutoSaveManager(self._handle_auto_save, auto_save_delay) if on_save else None
+        # UI Components
+        self.text_field = None
+        self.toolbar = None
+        self.save_indicator = None
+        self.container = None
         
         # Build the component
         self.container = self._build_component()
@@ -169,7 +174,7 @@ class EnhancedTextEditor:
         
         
         # Main container
-        return ThemedCard(
+        container = ThemedCard(
             self.theme_manager,
             elevation="md",
             content=ft.Column(
@@ -192,6 +197,8 @@ class EnhancedTextEditor:
             spacing="none",
             expand=True
         )
+        
+        return container
     
     def _create_toolbar(self) -> ft.Row:
         """Create formatting toolbar."""
@@ -254,6 +261,21 @@ class EnhancedTextEditor:
                     lambda _: self._apply_heading(3)
                 ),
                 
+                # Separator
+                ft.Container(
+                    width=1,
+                    height=20,
+                    bgcolor=colors.border_subtle,
+                    margin=ft.margin.symmetric(horizontal=SPACING["sm"])
+                ),
+                
+                # AI Button (NEW)
+                create_format_button(
+                    ft.Icons.PSYCHOLOGY,  # or ft.Icons.LIGHTBULB
+                    "Generate AI Reflection",
+                    lambda _: self._on_ai_button_clicked()
+                ),
+                
                 # Spacer
                 ft.Container(expand=True),
                 
@@ -275,6 +297,13 @@ class EnhancedTextEditor:
     
     
     
+    def _on_ai_button_clicked(self) -> None:
+        """Handle AI button click."""
+        if self.on_ai_generate:
+            content = self.get_content()
+            if content.strip():  # Only generate if there's content
+                self.on_ai_generate(content)
+
     def _on_text_change(self, e: ft.ControlEvent) -> None:
         """Handle text content changes."""
         new_content = e.control.value or ""
@@ -316,10 +345,6 @@ class EnhancedTextEditor:
     
     def _on_blur(self, _: ft.ControlEvent) -> None:
         """Handle text field blur."""
-        # Cancel any pending debounced save
-        if self._save_timer and self._save_timer.is_alive():
-            self._save_timer.cancel()
-        
         # Trigger immediate save on blur if there are unsaved changes
         if self._is_dirty and self.on_save:
             self.on_save(self._content)
@@ -336,16 +361,16 @@ class EnhancedTextEditor:
             self._update_save_indicator()
     
     def _schedule_debounced_save(self, content: str) -> None:
-        """Schedule a debounced save operation using threading."""
+        """Schedule a debounced save operation."""
         if not self.on_save or content == self._last_saved_content:
             return
         
-        # Cancel existing timer
-        if self._save_timer and self._save_timer.is_alive():
+        # Use a simple timer-based approach
+        import threading
+        if hasattr(self, '_save_timer') and self._save_timer and self._save_timer.is_alive():
             self._save_timer.cancel()
         
-        # Schedule new save
-        self._save_timer = threading.Timer(self._save_delay, self._perform_save, args=[content])
+        self._save_timer = threading.Timer(self.auto_save_delay, self._perform_save, args=[content])
         self._save_timer.start()
     
     def _perform_save(self, content: str) -> None:
@@ -486,7 +511,7 @@ class EnhancedTextEditor:
         self._last_saved_content = content
         self._is_dirty = False
         
-        if self.text_field:
+        if self.text_field and hasattr(self.text_field, 'page') and self.text_field.page:
             self.text_field.value = content
             self.text_field.update()
         
@@ -516,7 +541,7 @@ class EnhancedTextEditor:
     def update_placeholder(self, new_placeholder: str) -> None:
         """Update the placeholder text."""
         self.placeholder_text = new_placeholder
-        if self.text_field:
+        if self.text_field and hasattr(self.text_field, 'page') and self.text_field.page:
             self.text_field.hint_text = new_placeholder
             self.text_field.update()
     

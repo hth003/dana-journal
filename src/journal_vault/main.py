@@ -5,7 +5,7 @@ A privacy-first desktop journaling application with local AI-powered insights.
 """
 
 from datetime import datetime, timedelta, date
-from typing import Set
+from typing import Set, Dict, Any
 import flet as ft
 from .ui.theme import (
     theme_manager,
@@ -20,6 +20,7 @@ from .ui.components import (
     CalendarComponent,
     EnhancedTextEditor,
     FileExplorer,
+    AIReflectionComponent,
 )
 from .config import app_config
 from .storage.file_manager import FileManager, JournalEntry
@@ -54,11 +55,13 @@ class JournalVaultApp:
         self.file_explorer = None
         self.file_manager = None
         self.entry_title_component = None
+        self.ai_reflection_component = None  # NEW
 
         # Current entry state
         self.current_entry_date = self.selected_date.date()
         self.current_entry_content = ""
         self.current_entry_exists = False
+        self._ai_process = None  # NEW: Track AI processes
 
         # Delete confirmation UI
         self.delete_confirmation_sheet = None
@@ -238,11 +241,12 @@ class JournalVaultApp:
         )
 
         # Main content area - Enhanced Text Editor
-        # Initialize text editor
+        # Initialize text editor with AI callback
         self.text_editor = EnhancedTextEditor(
             self.theme_manager,
             on_content_change=self._on_content_change,
             on_save=self._on_save_entry,
+            on_ai_generate=self._on_ai_generate,  # NEW
             placeholder_text=f"Start writing your thoughts for {self.current_entry_date.strftime('%B %d, %Y')}...",
             auto_save_delay=3.0,
         )
@@ -280,12 +284,21 @@ class JournalVaultApp:
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
         )
 
+        # Initialize AI reflection component
+        self.ai_reflection_component = AIReflectionComponent(
+            self.theme_manager,
+            on_regenerate=self._on_ai_regenerate,
+            on_hide=self._on_ai_hide
+        )
+
         journal_entry_section = ft.Container(
             content=ft.Column(
                 controls=[
                     entry_header,
                     ft.Container(height=SPACING["sm"]),
                     ft.Container(content=self.text_editor.get_container(), expand=True),
+                    # AI reflection component (inline)
+                    self.ai_reflection_component.get_container(),
                 ],
                 spacing=0,
                 expand=True,
@@ -294,53 +307,9 @@ class JournalVaultApp:
             expand=True,
         )
 
-        # AI Reflection section with improved consistency
-        ai_reflection_section = ft.Container(
-            content=ft.Column(
-                controls=[
-                    ThemedText(
-                        self.theme_manager,
-                        "AI Reflection",
-                        variant="primary",
-                        typography="h4",
-                    ),
-                    ft.Container(height=SPACING["sm"]),
-                    ThemedCard(
-                        self.theme_manager,
-                        elevation="md",
-                        content=ft.Column(
-                            controls=[
-                                ThemedText(
-                                    self.theme_manager,
-                                    "AI-powered insights and reflection questions will appear here.",
-                                    variant="secondary",
-                                    typography="body_sm",
-                                )
-                            ],
-                            expand=True,
-                        ),
-                        spacing="lg",
-                        expand=True,
-                    ),
-                ],
-                spacing=0,
-                expand=True,
-            ),
-            padding=ft.padding.all(SPACING["md"]),
-            expand=True,
-        )
-
-        # Main content area container
+        # Main content area container (simplified - no separate AI section)
         main_content = ft.Container(
-            content=ft.Column(
-                controls=[
-                    journal_entry_section,
-                    ft.Container(height=1, bgcolor=colors.border_subtle),
-                    ai_reflection_section,
-                ],
-                spacing=0,
-                expand=True,
-            ),
+            content=journal_entry_section,
             expand=True,
         )
 
@@ -356,7 +325,10 @@ class JournalVaultApp:
 
         self.page.add(main_layout)
 
-        # Load initial entry
+        # Load initial entry after page is updated
+        self.page.update()
+        
+        # Now load initial entry
         if self.file_manager:
             self._load_entry_for_date(self.current_entry_date)
             self._update_entry_delete_button()
@@ -365,6 +337,11 @@ class JournalVaultApp:
         """Handle date selection from calendar."""
         self.selected_date = selected_date
         new_date = selected_date.date()
+
+        # Cancel any running AI process when switching entries
+        if hasattr(self, '_ai_process') and self._ai_process and self._ai_process.is_alive():
+            self._ai_process.cancel()
+            # Note: Don't hide AI reflection here - let it persist if it exists
 
         # Save current entry before switching
         if self.text_editor and self.current_entry_date != new_date:
@@ -399,6 +376,11 @@ class JournalVaultApp:
     def _on_file_selected(self, entry_date: date, entry: JournalEntry) -> None:
         """Handle file selection from file explorer."""
         if entry_date and entry:
+            # Cancel any running AI process when switching entries
+            if hasattr(self, '_ai_process') and self._ai_process and self._ai_process.is_alive():
+                self._ai_process.cancel()
+                # Note: Don't hide AI reflection here - let it persist if it exists
+            
             # Update calendar and load entry
             self.selected_date = datetime.combine(entry_date, datetime.min.time())
             self.current_entry_date = entry_date
@@ -427,6 +409,11 @@ class JournalVaultApp:
             # Update delete button visibility
             self.current_entry_exists = True
             self._update_entry_delete_button()
+
+            # Show AI reflection if it exists for this entry
+            if entry.ai_reflection and self.ai_reflection_component:
+                self.ai_reflection_component.show_reflection(entry.ai_reflection)
+                print(f"Loaded AI reflection for entry: {entry_date}")
 
             print(f"Selected entry for date: {entry_date.strftime('%Y-%m-%d')}")
 
@@ -470,41 +457,147 @@ class JournalVaultApp:
                 print(f"Error deleting entry: {e}")
 
     def _on_content_change(self, content: str) -> None:
-        """Handle text editor content changes."""
+        """Handle content changes from text editor."""
         self.current_entry_content = content
-        # Update entry existence based on content
-        has_content = bool(content.strip())
-        if has_content != self.current_entry_exists:
-            self.current_entry_exists = has_content
-            print(f"current_entry_exists updated to: {has_content}")
-            self._update_entry_delete_button()
+        self.current_entry_exists = bool(content.strip())
 
     def _on_save_entry(self, content: str) -> None:
-        """Handle auto-save from text editor."""
+        """Handle save requests from text editor."""
         self._save_entry_for_date(self.current_entry_date, content)
 
+    def _on_ai_generate(self, content: str) -> None:
+        """Handle AI generation request from toolbar button."""
+        if not content.strip():
+            return
+        
+        # Show generating state
+        self.ai_reflection_component.show_generating_state()
+        
+        # TODO: Call AI service
+        # For now, simulate AI response
+        self._simulate_ai_response(content)
+
+    def _on_ai_regenerate(self) -> None:
+        """Handle AI regeneration request."""
+        content = self.text_editor.get_content()
+        if content.strip():
+            self._on_ai_generate(content)
+
+    def _on_ai_hide(self) -> None:
+        """Handle AI hide request."""
+        self.ai_reflection_component.hide()
+        
+        # Clear AI reflection data from the entry
+        self._clear_ai_reflection_from_entry()
+    
+    def _clear_ai_reflection_from_entry(self) -> None:
+        """Clear AI reflection data from the current journal entry."""
+        if not self.file_manager:
+            return
+        
+        try:
+            # Load current entry
+            entry = self.file_manager.load_entry(self.current_entry_date)
+            if entry:
+                # Clear AI reflection data
+                entry.ai_reflection = None
+                entry.modified_at = datetime.now()
+                
+                # Save the entry without AI reflection data
+                self.file_manager.save_entry(entry)
+                print(f"Cleared AI reflection for entry: {self.current_entry_date}")
+        except Exception as e:
+            print(f"Error clearing AI reflection: {e}")
+
+    def _simulate_ai_response(self, content: str) -> None:
+        """Simulate AI response for testing."""
+        import threading
+        import time
+        
+        def generate_response():
+            time.sleep(2)  # Simulate processing time
+            
+            # Simulated AI response
+            reflection_data = {
+                "insights": [
+                    "You seem to be processing a challenging situation",
+                    "There's a pattern of self-reflection in your writing"
+                ],
+                "questions": [
+                    "What would help you feel more confident in this situation?",
+                    "How might you approach this differently next time?",
+                    "What support do you need right now?"
+                ],
+                "themes": ["challenge", "self_improvement", "support"],
+                "generated_at": "2025-08-08T15:30:00Z"
+            }
+            
+            # Show the reflection
+            self.ai_reflection_component.show_reflection(reflection_data)
+            
+            # Save AI reflection data to the journal entry
+            self._save_ai_reflection_to_entry(reflection_data)
+        
+        # Cancel any existing AI process
+        if hasattr(self, '_ai_process') and self._ai_process and self._ai_process.is_alive():
+            self._ai_process.cancel()
+        
+        # Start new AI process
+        self._ai_process = threading.Timer(2.0, generate_response)
+        self._ai_process.start()
+
+    def _save_ai_reflection_to_entry(self, reflection_data: Dict[str, Any]) -> None:
+        """Save AI reflection data to the current journal entry."""
+        if not self.file_manager:
+            return
+        
+        try:
+            # Load current entry
+            entry = self.file_manager.load_entry(self.current_entry_date)
+            if entry:
+                # Update AI reflection data
+                entry.ai_reflection = reflection_data
+                entry.modified_at = datetime.now()
+                
+                # Save the entry with AI reflection data
+                self.file_manager.save_entry(entry)
+                print(f"Saved AI reflection for entry: {self.current_entry_date}")
+            else:
+                print(f"Could not save AI reflection - no entry found for {self.current_entry_date}")
+        except Exception as e:
+            print(f"Error saving AI reflection: {e}")
+    
     def _load_entry_for_date(self, entry_date) -> None:
         """Load entry content for a specific date."""
         if not self.file_manager:
             return
+
+        # Hide AI reflection when loading a new entry (will be shown if data exists)
+        if self.ai_reflection_component:
+            self.ai_reflection_component.hide()
 
         try:
             entry = self.file_manager.load_entry(entry_date)
             if entry:
                 self.current_entry_content = entry.content
                 self.current_entry_exists = True
-                if self.text_editor:
+                if self.text_editor and hasattr(self.text_editor, 'text_field') and self.text_editor.text_field:
                     self.text_editor.set_content(entry.content)
+                
+                # Show AI reflection if it exists for this entry
+                if entry.ai_reflection and self.ai_reflection_component:
+                    self.ai_reflection_component.show_reflection(entry.ai_reflection)
+                    print(f"Loaded AI reflection for entry: {entry_date}")
             else:
                 self.current_entry_content = ""
                 self.current_entry_exists = False
-                if self.text_editor:
+                if self.text_editor and hasattr(self.text_editor, 'text_field') and self.text_editor.text_field:
                     self.text_editor.clear()
         except Exception as e:
             print(f"Error loading entry for {entry_date}: {e}")
             self.current_entry_content = ""
             self.current_entry_exists = False
-            if self.text_editor:
+            if self.text_editor and hasattr(self.text_editor, 'text_field') and self.text_editor.text_field:
                 self.text_editor.clear()
 
         # Update delete button visibility

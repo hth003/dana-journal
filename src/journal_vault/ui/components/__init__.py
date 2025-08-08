@@ -4,6 +4,7 @@ from .onboarding import OnboardingFlow
 from .calendar import CalendarComponent, MiniCalendar
 from .text_editor import EnhancedTextEditor, MarkdownHelper
 from .file_explorer import FileExplorer, FileTreeNode
+from .ai_reflection import AIReflectionComponent
 
 __all__ = [
     'OnboardingFlow', 
@@ -12,5 +13,6 @@ __all__ = [
     'EnhancedTextEditor',
     'MarkdownHelper',
     'FileExplorer',
-    'FileTreeNode'
+    'FileTreeNode',
+    'AIReflectionComponent'
 ]

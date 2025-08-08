@@ -497,22 +497,92 @@ Local AI-powered reflection system using Qwen2.5-3B-Instruct for generating insi
 - **llama.cpp Integration**: Optimized inference performance
 
 #### AI Reflection System - 📋 PLANNED
-- **Insight Generation**: AI-powered analysis of journal entries
-- **Reflection Questions**: 3 thoughtful questions per entry
-- **Caching System**: Stored reflections to avoid regeneration
-- **Progressive Loading**: Model loading with progress indicators
+- **Manual Trigger Only**: AI button in text editor toolbar for user control
+- **Inline Display**: AI reflection component integrated below text editor
+- **Persistent Storage**: Reflections saved with journal entries and reloaded on revisit
+- **Smart Content Detection**: Only enable AI button when entry has meaningful content
+- **Regeneration Support**: Option to generate fresh insights for existing entries
 
 #### UI Integration - 📋 FRAMEWORK READY
-- **Reflection Panel**: Bottom panel UI already implemented
-- **Loading States**: Progress indicators prepared
-- **Content Display**: Dynamic reflection content area
+- **Toolbar Integration**: AI button added to text editor formatting toolbar
+- **Inline Reflection Component**: Collapsible reflection display below editor
+- **Loading States**: Progress indicators during AI generation
 - **Error Handling**: Graceful AI service degradation
+- **Hide/Show Controls**: User can hide reflection panel when desired
 
 ### Technical Preparation - 🔄 FRAMEWORK READY
 - **Storage Structure**: AI cache directory created
 - **Data Models**: AI reflection fields in JournalEntry
-- **UI Components**: Reflection display panel implemented
+- **UI Components**: AIReflectionComponent ready for implementation
 - **Integration Points**: Callback system ready for AI responses
+- **Persistent Display**: Reflection data saved in YAML frontmatter
+
+### User Experience Design - 📋 PLANNED
+
+#### Manual Trigger Flow
+1. **Clean Interface**: No AI panel visible initially
+2. **Natural Writing**: User focuses on journaling without distractions
+3. **Manual Activation**: User clicks AI button in toolbar when ready
+4. **Generation Process**: AI processes entry and displays reflection
+5. **Persistent Display**: Reflection remains visible when returning to entry
+
+#### Inline Display Design
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    AI Journal Vault                         │
+├─────────────┬───────────────────────────────────────────────┤
+│             │                                               │
+│ Left Panel  │           Main Content Area                  │
+│             │                                               │
+│ ┌─────────┐ │ ┌─────────────────────────────────────────┐  │
+│ │Calendar │ │ │ August 08, 2025                         │  │
+│ │Component│ │ ├─────────────────────────────────────────┤  │
+│ │         │ │ │ [B] [I] [Link] [1] [2] [3] [🤖 AI]    │  │
+│ └─────────┘ │ ├─────────────────────────────────────────┤  │
+│             │ │                                         │  │
+│ ┌─────────┐ │ │   Text Editor Content                  │  │
+│ │  File   │ │ │                                         │  │
+│ │Explorer │ │ │                                         │  │
+│ └─────────┘ │ └─────────────────────────────────────────┘  │
+│             │ ┌─────────────────────────────────────────┐  │
+│             │ │ 🤖 AI Reflection                        │  │
+│             │ │ ┌─────────────────────────────────────┐ │  │
+│             │ │ │ • Key insight 1                     │ │  │
+│             │ │ │ • Key insight 2                     │ │  │
+│             │ │ │                                       │ │  │
+│             │ │ │ Questions:                            │ │  │
+│             │ │ │ 1. Reflection question 1?            │ │  │
+│             │ │ │ 2. Reflection question 2?            │ │  │
+│             │ │ │ 3. Reflection question 3?            │ │  │
+│             │ │ └─────────────────────────────────────┘ │  │
+│             │ │ [Regenerate] [Hide]                     │  │
+│             │ └─────────────────────────────────────────┘  │
+└─────────────┴───────────────────────────────────────────────┘
+```
+
+#### AI Button States
+- **Disabled**: When entry has insufficient content (< 50 words)
+- **Enabled**: When entry has meaningful content
+- **Generating**: During AI processing with loading indicator
+- **Generated**: Shows reflection with regenerate option
+
+#### Reflection Content Structure
+```python
+{
+    "insights": [
+        "You seem to be processing a challenging work situation",
+        "There's a pattern of self-reflection in your entries"
+    ],
+    "questions": [
+        "What would help you feel more confident in this situation?",
+        "How might you approach this differently next time?",
+        "What support do you need right now?"
+    ],
+    "themes": ["work_stress", "self_improvement", "relationships"],
+    "generated_at": "2025-08-08T15:30:00Z",
+    "model_used": "qwen2.5-3b"
+}
+```
 
 ---
 
