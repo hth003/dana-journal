@@ -4,14 +4,13 @@ AI Journal Vault - Main Application Entry Point
 A privacy-first desktop journaling application with local AI-powered insights.
 """
 
-import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import Set
 import flet as ft
 from .ui.theme import theme_manager, ThemedContainer, ThemedText, ThemedCard, SPACING, COMPONENT_SIZES
 from .ui.components import OnboardingFlow, CalendarComponent, EnhancedTextEditor, FileExplorer
 from .config import app_config
-from .storage.file_manager import FileManager
+from .storage.file_manager import FileManager, JournalEntry
 
 
 class JournalVaultApp:
@@ -42,6 +41,7 @@ class JournalVaultApp:
         self.text_editor = None
         self.file_explorer = None
         self.file_manager = None
+        self.entry_title_component = None
         
         # Current entry state
         self.current_entry_date = self.selected_date.date()
@@ -233,7 +233,14 @@ class JournalVaultApp:
             on_save=self._on_save_entry,
             placeholder_text=f"Start writing your thoughts for {self.current_entry_date.strftime('%B %d, %Y')}...",
             auto_save_delay=3.0,
-            show_stats=True
+        )
+        
+        # Create entry title component
+        self.entry_title_component = ThemedText(
+            self.theme_manager,
+            f"{self.current_entry_date.strftime('%B %d, %Y')}",
+            variant="primary",
+            typography="h4"
         )
         
         journal_entry_section = ft.Container(
@@ -241,12 +248,7 @@ class JournalVaultApp:
                 controls=[
                     ft.Row(
                         controls=[
-                            ThemedText(
-                                self.theme_manager,
-                                f"Journal Entry - {self.current_entry_date.strftime('%B %d, %Y')}",
-                                variant="primary",
-                                typography="h4"
-                            ),
+                            self.entry_title_component,
                             ft.Container(expand=True),
                             ft.TextButton(
                                 text="Save",
@@ -366,37 +368,54 @@ class JournalVaultApp:
         # Update text editor placeholder and title
         self._update_editor_for_date(new_date)
         
+        # Update entry title
+        if self.entry_title_component:
+            title = f"{new_date.strftime('%B %d, %Y')}"
+            self.entry_title_component.value = title
+            self.entry_title_component.update()
+        
         # Update file explorer selection
         if self.file_explorer:
             self.file_explorer.select_entry_by_date(new_date)
         
         print(f"Selected date: {selected_date.strftime('%Y-%m-%d')}")
     
-    def _on_file_selected(self, file_path, entry_date) -> None:
+    def _on_file_selected(self, entry_date: date, entry: JournalEntry) -> None:
         """Handle file selection from file explorer."""
-        if entry_date:
+        if entry_date and entry:
             # Update calendar and load entry
             self.selected_date = datetime.combine(entry_date, datetime.min.time())
             self.current_entry_date = entry_date
             
-            # Load entry content
-            self._load_entry_for_date(entry_date)
+            # Load entry content directly from provided entry (no need to reload from file)
+            self.current_entry_content = entry.content
             
             # Update calendar selection
             if self.calendar_component:
                 self.calendar_component.set_selected_date(self.selected_date)
             
-            # Update text editor
-            self._update_editor_for_date(entry_date)
+            # Update text editor with entry content
+            if self.text_editor:
+                self.text_editor.set_content(entry.content)
             
-            print(f"Selected file: {file_path} for date: {entry_date}")
+            # Update entry title
+            if self.entry_title_component:
+                title = entry.title or f"{entry_date.strftime('%B %d, %Y')}"
+                self.entry_title_component.value = title
+                self.entry_title_component.update()
+            
+            # Update file explorer selection state if needed
+            if self.file_explorer:
+                self.file_explorer.select_entry_by_date(entry_date)
+            
+            print(f"Selected entry for date: {entry_date.strftime('%Y-%m-%d')}")
     
     def _on_file_created(self, entry_date) -> None:
         """Handle new file creation."""
         # Create new entry
         if self.file_manager:
             try:
-                entry = self.file_manager.create_entry(entry_date)
+                self.file_manager.create_entry(entry_date)
                 
                 # Update UI
                 self._refresh_entry_dates()
@@ -487,12 +506,10 @@ class JournalVaultApp:
         if not self.text_editor:
             return
         
-        # Update placeholder text
-        placeholder = f"Start writing your thoughts for {entry_date.strftime('%B %d, %Y')}..."
-        # Note: Flet doesn't allow dynamic placeholder updates, so this is conceptual
+        # Update placeholder text dynamically
+        new_placeholder = f"Start writing your thoughts for {entry_date.strftime('%B %d, %Y')}..."
+        self.text_editor.update_placeholder(new_placeholder)
         
-        # Update header in the UI would require rebuilding the header section
-        # For now, just print the date change
         print(f"Editor updated for date: {entry_date}")
     
     def _refresh_entry_dates(self) -> None:
