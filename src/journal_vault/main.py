@@ -7,19 +7,31 @@ A privacy-first desktop journaling application with local AI-powered insights.
 from datetime import datetime, timedelta, date
 from typing import Set
 import flet as ft
-from .ui.theme import theme_manager, ThemedContainer, ThemedText, ThemedCard, SPACING, COMPONENT_SIZES
-from .ui.components import OnboardingFlow, CalendarComponent, EnhancedTextEditor, FileExplorer
+from .ui.theme import (
+    theme_manager,
+    ThemedContainer,
+    ThemedText,
+    ThemedCard,
+    SPACING,
+    COMPONENT_SIZES,
+)
+from .ui.components import (
+    OnboardingFlow,
+    CalendarComponent,
+    EnhancedTextEditor,
+    FileExplorer,
+)
 from .config import app_config
 from .storage.file_manager import FileManager, JournalEntry
 
 
 class JournalVaultApp:
     """Main application class for AI Journal Vault."""
-    
+
     def __init__(self, page: ft.Page):
         self.page = page
         self.theme_manager = theme_manager
-        
+
         # App state
         self.is_onboarded = app_config.is_onboarded()
         self.storage_path = app_config.get_storage_path()
@@ -32,9 +44,9 @@ class JournalVaultApp:
             datetime.now() - timedelta(days=7),
             datetime.now() - timedelta(days=10),
         }
-        
+
         # No theme configuration needed - always dark mode
-        
+
         # UI components
         self.calendar_component = None
         self.onboarding_flow = None
@@ -42,111 +54,110 @@ class JournalVaultApp:
         self.file_explorer = None
         self.file_manager = None
         self.entry_title_component = None
-        
+
         # Current entry state
         self.current_entry_date = self.selected_date.date()
         self.current_entry_content = ""
-        
+        self.current_entry_exists = False
+
+        # Delete confirmation UI
+        self.delete_confirmation_sheet = None
+
         # Configure page
         self._setup_page()
-        
+
         # Create appropriate layout
         if self.is_onboarded:
             self._create_main_layout()
         else:
             self._create_onboarding_layout()
-    
+
     def _setup_page(self) -> None:
         """Configure page properties and theme."""
         self.page.title = "AI Journal Vault"
         # Apply saved window state
         window_state = app_config.get_window_state()
-        self.page.window.width = window_state.get('width', 1400)
-        self.page.window.height = window_state.get('height', 900)
+        self.page.window.width = window_state.get("width", 1400)
+        self.page.window.height = window_state.get("height", 900)
         self.page.window.min_width = 1000
         self.page.window.min_height = 700
         self.page.window.center()
-        
+
         # Listen for window close to save state
         def on_window_event(e):
             if e.data == "close":
                 try:
                     app_config.set_window_state(
-                        self.page.window.width or 1400,
-                        self.page.window.height or 900
+                        self.page.window.width or 1400, self.page.window.height or 900
                     )
                 except Exception as ex:
                     print(f"Error saving window state: {ex}")
-        
+
         self.page.window.on_event = on_window_event
         self.page.padding = 0
         self.page.spacing = 0
         self.page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
         self.page.vertical_alignment = ft.MainAxisAlignment.START
-        
+
         # Apply dark theme colors
         colors = self.theme_manager.colors
         self.page.bgcolor = colors.background
-    
-    
+
     def _create_onboarding_layout(self) -> None:
         """Create the onboarding flow layout."""
         self.onboarding_flow = OnboardingFlow(
-            self.theme_manager,
-            on_complete=self._on_onboarding_complete,
-            page=self.page
+            self.theme_manager, on_complete=self._on_onboarding_complete, page=self.page
         )
-        
+
         # Set up page overlays for file picker
         self.onboarding_flow.setup_page_overlays(self.page)
-        
+
         self.page.add(self.onboarding_flow.get_container())
-    
+
     def _on_onboarding_complete(self, onboarding_data: dict) -> None:
         """Handle onboarding completion."""
         # Save onboarding data using config system
-        self.storage_path = onboarding_data.get('storage_path')
+        self.storage_path = onboarding_data.get("storage_path")
         app_config.set_storage_path(self.storage_path)
-        
+
         # Save vault name
-        vault_name = onboarding_data.get('vault_name')
+        vault_name = onboarding_data.get("vault_name")
         if vault_name:
             app_config.set_vault_name(vault_name)
-        
+
         # No theme preference to save - always dark mode
-        
+
         # Mark onboarding as complete
         app_config.set_onboarded(True)
-        
+
         # Initialize file manager with storage path
         self.file_manager = FileManager(self.storage_path)
-        
+
         # Clear page and create main layout
         self.page.clean()
         self.is_onboarded = True
-        
+
         # Reset page overlays since they were cleared
-        if hasattr(self.page, 'overlay') and self.page.overlay:
+        if hasattr(self.page, "overlay") and self.page.overlay:
             self.page.overlay.clear()
-        
+
         # Re-apply theme colors after clearing page
         colors = self.theme_manager.colors
         self.page.bgcolor = colors.background
-        
+
         # Re-apply page configuration that might have been lost
         self.page.padding = 0
         self.page.spacing = 0
         self.page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
         self.page.vertical_alignment = ft.MainAxisAlignment.START
-        
+
         self._create_main_layout()
         self.page.update()
-    
-    
+
     def _create_main_layout(self) -> None:
         """Create the main three-panel layout with Obsidian-like design."""
         colors = self.theme_manager.colors
-        
+
         # Header with consistent spacing and typography
         header = ThemedContainer(
             self.theme_manager,
@@ -158,22 +169,22 @@ class JournalVaultApp:
                         self.theme_manager,
                         "AI Journal Vault",
                         variant="primary",
-                        typography="h3"
+                        typography="h3",
                     ),
-                    ft.Container()  # Empty container for spacing
+                    ft.Container(),  # Empty container for spacing
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                vertical_alignment=ft.CrossAxisAlignment.CENTER
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
             ),
             spacing="lg",
-            border=ft.border.only(bottom=ft.border.BorderSide(1, colors.border_subtle))
+            border=ft.border.only(bottom=ft.border.BorderSide(1, colors.border_subtle)),
         )
-        
+
         # Initialize file manager if not already done
         if not self.file_manager:
             self.file_manager = FileManager(self.storage_path)
             print(f"Main: Initialized FileManager with path: {self.storage_path}")
-        
+
         # Get actual entry dates from file manager (after ensuring it's properly initialized)
         try:
             actual_entry_dates = self.file_manager.get_entry_dates()
@@ -181,53 +192,51 @@ class JournalVaultApp:
         except Exception as e:
             print(f"Main: Error loading entry dates: {e}")
             actual_entry_dates = set()
-        
+
         # Left sidebar - Calendar and Files
         self.calendar_component = CalendarComponent(
             self.theme_manager,
             on_date_selected=self._on_date_selected,
-            entry_dates=actual_entry_dates
+            entry_dates=actual_entry_dates,
         )
-        
+
         # File explorer component (reuse the same file_manager instance)
         self.file_explorer = FileExplorer(
             self.theme_manager,
             file_manager=self.file_manager,  # Use same instance
             on_file_select=self._on_file_selected,
-            on_create_entry=self._on_file_created
+            on_create_entry=self._on_file_created,
+            on_delete_entry=self._on_file_deleted,
         )
-        
+
         # Calendar section with consistent spacing
         calendar_section = ft.Container(
             content=self.calendar_component.get_container(),
-            padding=ft.padding.all(SPACING["md"])
+            padding=ft.padding.all(SPACING["md"]),
         )
-        
+
         # Files section with file explorer
         files_section = ft.Container(
             content=self.file_explorer.get_container(),
             padding=ft.padding.all(SPACING["md"]),
-            expand=True
+            expand=True,
         )
-        
+
         # Left sidebar container with consistent sizing
         left_sidebar = ft.Container(
             content=ft.Column(
                 controls=[
                     calendar_section,
-                    ft.Container(
-                        height=1,
-                        bgcolor=colors.border_subtle
-                    ),
-                    files_section
+                    ft.Container(height=1, bgcolor=colors.border_subtle),
+                    files_section,
                 ],
                 spacing=0,
-                expand=True
+                expand=True,
             ),
             width=COMPONENT_SIZES["sidebar_width"],
-            border=ft.border.only(right=ft.border.BorderSide(1, colors.border_subtle))
+            border=ft.border.only(right=ft.border.BorderSide(1, colors.border_subtle)),
         )
-        
+
         # Main content area - Enhanced Text Editor
         # Initialize text editor
         self.text_editor = EnhancedTextEditor(
@@ -237,38 +246,54 @@ class JournalVaultApp:
             placeholder_text=f"Start writing your thoughts for {self.current_entry_date.strftime('%B %d, %Y')}...",
             auto_save_delay=3.0,
         )
-        
+
         # Create entry title component
         self.entry_title_component = ThemedText(
             self.theme_manager,
             f"{self.current_entry_date.strftime('%B %d, %Y')}",
             variant="primary",
-            typography="h4"
+            typography="h4",
         )
-        
+
+        # Create delete button for entries (initially hidden)
+        self.entry_delete_button = ft.IconButton(
+            icon=ft.Icons.DELETE_OUTLINE,
+            icon_size=COMPONENT_SIZES["icon_sm"],
+            icon_color=colors.text_muted,
+            tooltip="Delete this entry",
+            visible=False,
+            on_click=self._on_delete_current_entry,
+            style=ft.ButtonStyle(
+                shape=ft.RoundedRectangleBorder(radius=6),
+                overlay_color=colors.error_subtle,
+            ),
+        )
+
+        # Entry header with title and delete button
+        entry_header = ft.Row(
+            controls=[
+                self.entry_title_component,
+                ft.Container(expand=True),
+                self.entry_delete_button,
+            ],
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        )
+
         journal_entry_section = ft.Container(
             content=ft.Column(
                 controls=[
-                    ft.Row(
-                        controls=[
-                            self.entry_title_component,
-                        ],
-                        alignment=ft.MainAxisAlignment.START,
-                        vertical_alignment=ft.CrossAxisAlignment.CENTER
-                    ),
+                    entry_header,
                     ft.Container(height=SPACING["sm"]),
-                    ft.Container(
-                        content=self.text_editor.get_container(),
-                        expand=True
-                    )
+                    ft.Container(content=self.text_editor.get_container(), expand=True),
                 ],
                 spacing=0,
-                expand=True
+                expand=True,
             ),
             padding=ft.padding.all(SPACING["md"]),
-            expand=True
+            expand=True,
         )
-        
+
         # AI Reflection section with improved consistency
         ai_reflection_section = ft.Container(
             content=ft.Column(
@@ -277,7 +302,7 @@ class JournalVaultApp:
                         self.theme_manager,
                         "AI Reflection",
                         variant="primary",
-                        typography="h4"
+                        typography="h4",
                     ),
                     ft.Container(height=SPACING["sm"]),
                     ThemedCard(
@@ -289,192 +314,207 @@ class JournalVaultApp:
                                     self.theme_manager,
                                     "AI-powered insights and reflection questions will appear here.",
                                     variant="secondary",
-                                    typography="body_sm"
+                                    typography="body_sm",
                                 )
                             ],
-                            expand=True
+                            expand=True,
                         ),
                         spacing="lg",
-                        expand=True
-                    )
+                        expand=True,
+                    ),
                 ],
                 spacing=0,
-                expand=True
+                expand=True,
             ),
             padding=ft.padding.all(SPACING["md"]),
-            expand=True
+            expand=True,
         )
-        
+
         # Main content area container
         main_content = ft.Container(
             content=ft.Column(
                 controls=[
                     journal_entry_section,
-                    ft.Container(
-                        height=1,
-                        bgcolor=colors.border_subtle
-                    ),
-                    ai_reflection_section
+                    ft.Container(height=1, bgcolor=colors.border_subtle),
+                    ai_reflection_section,
                 ],
                 spacing=0,
-                expand=True
+                expand=True,
             ),
-            expand=True
+            expand=True,
         )
-        
+
         # Main layout with left sidebar and main content
         main_layout = ft.Column(
             controls=[
                 header,
-                ft.Row(
-                    controls=[left_sidebar, main_content],
-                    spacing=0,
-                    expand=True
-                )
+                ft.Row(controls=[left_sidebar, main_content], spacing=0, expand=True),
             ],
             spacing=0,
-            expand=True
+            expand=True,
         )
-        
+
         self.page.add(main_layout)
-        
+
         # Load initial entry
         if self.file_manager:
             self._load_entry_for_date(self.current_entry_date)
-    
+            self._update_entry_delete_button()
+
     def _on_date_selected(self, selected_date: datetime) -> None:
         """Handle date selection from calendar."""
         self.selected_date = selected_date
         new_date = selected_date.date()
-        
+
         # Save current entry before switching
         if self.text_editor and self.current_entry_date != new_date:
             current_content = self.text_editor.get_content()
             if current_content.strip():  # Only save if there's content
                 self._save_entry_for_date(self.current_entry_date, current_content)
-        
+
         # Switch to new date
         self.current_entry_date = new_date
-        
+
         # Load entry for new date
         self._load_entry_for_date(new_date)
-        
+
         # Update text editor placeholder and title
         self._update_editor_for_date(new_date)
-        
+
         # Update entry title
         if self.entry_title_component:
             title = f"{new_date.strftime('%B %d, %Y')}"
             self.entry_title_component.value = title
             self.entry_title_component.update()
-        
+
         # Update file explorer selection
         if self.file_explorer:
             self.file_explorer.select_entry_by_date(new_date)
-        
+
+        # Update delete button visibility
+        self._update_entry_delete_button()
+
         print(f"Selected date: {selected_date.strftime('%Y-%m-%d')}")
-    
+
     def _on_file_selected(self, entry_date: date, entry: JournalEntry) -> None:
         """Handle file selection from file explorer."""
         if entry_date and entry:
             # Update calendar and load entry
             self.selected_date = datetime.combine(entry_date, datetime.min.time())
             self.current_entry_date = entry_date
-            
+
             # Load entry content directly from provided entry (no need to reload from file)
             self.current_entry_content = entry.content
-            
+
             # Update calendar selection
             if self.calendar_component:
                 self.calendar_component.set_selected_date(self.selected_date)
-            
+
             # Update text editor with entry content
             if self.text_editor:
                 self.text_editor.set_content(entry.content)
-            
-            # Update entry title
+
+            # Update entry title - always use date for consistency
             if self.entry_title_component:
-                title = entry.title or f"{entry_date.strftime('%B %d, %Y')}"
+                title = f"{entry_date.strftime('%B %d, %Y')}"
                 self.entry_title_component.value = title
                 self.entry_title_component.update()
-            
+
             # Update file explorer selection state if needed
             if self.file_explorer:
                 self.file_explorer.select_entry_by_date(entry_date)
-            
+
+            # Update delete button visibility
+            self.current_entry_exists = True
+            self._update_entry_delete_button()
+
             print(f"Selected entry for date: {entry_date.strftime('%Y-%m-%d')}")
-    
+
     def _on_file_created(self, entry_date) -> None:
         """Handle new file creation."""
         # Create new entry
         if self.file_manager:
             try:
                 self.file_manager.create_entry(entry_date)
-                
+
                 # Update UI
                 self._refresh_entry_dates()
-                
+
                 # Select the new entry
                 self.selected_date = datetime.combine(entry_date, datetime.min.time())
                 self._on_date_selected(self.selected_date)
-                
+
                 print(f"Created new entry for: {entry_date}")
             except Exception as e:
                 print(f"Error creating entry: {e}")
-    
+
     def _on_file_deleted(self, entry_date) -> None:
         """Handle file deletion."""
         # Delete entry from file manager
         if self.file_manager:
             try:
                 self.file_manager.delete_entry(entry_date)
-                
+
                 # Update UI
                 self._refresh_entry_dates()
-                
+
                 # Clear text editor if this was the current entry
-                if self.current_entry_date == entry_date and self.text_editor:
-                    self.text_editor.clear()
-                
+                if self.current_entry_date == entry_date:
+                    if self.text_editor:
+                        self.text_editor.clear()
+                    self.current_entry_exists = False
+                    self._update_entry_delete_button()
+
                 print(f"Deleted entry for: {entry_date}")
             except Exception as e:
                 print(f"Error deleting entry: {e}")
-    
+
     def _on_content_change(self, content: str) -> None:
         """Handle text editor content changes."""
         self.current_entry_content = content
-    
+        # Update entry existence based on content
+        has_content = bool(content.strip())
+        if has_content != self.current_entry_exists:
+            self.current_entry_exists = has_content
+            print(f"current_entry_exists updated to: {has_content}")
+            self._update_entry_delete_button()
+
     def _on_save_entry(self, content: str) -> None:
         """Handle auto-save from text editor."""
         self._save_entry_for_date(self.current_entry_date, content)
-    
-    
+
     def _load_entry_for_date(self, entry_date) -> None:
         """Load entry content for a specific date."""
         if not self.file_manager:
             return
-        
+
         try:
             entry = self.file_manager.load_entry(entry_date)
             if entry:
                 self.current_entry_content = entry.content
+                self.current_entry_exists = True
                 if self.text_editor:
                     self.text_editor.set_content(entry.content)
             else:
                 self.current_entry_content = ""
+                self.current_entry_exists = False
                 if self.text_editor:
                     self.text_editor.clear()
         except Exception as e:
             print(f"Error loading entry for {entry_date}: {e}")
             self.current_entry_content = ""
+            self.current_entry_exists = False
             if self.text_editor:
                 self.text_editor.clear()
-    
+
+        # Update delete button visibility
+        self._update_entry_delete_button()
+
     def _save_entry_for_date(self, entry_date, content: str) -> None:
         """Save entry content for a specific date."""
         if not self.file_manager or not content.strip():
             return
-        
+
         try:
             # Load existing entry or create new one
             entry = self.file_manager.load_entry(entry_date)
@@ -483,45 +523,183 @@ class JournalVaultApp:
                 self.file_manager.save_entry(entry)
             else:
                 self.file_manager.create_entry(entry_date, content=content)
-            
+
             # Update entry dates in UI components
             self._refresh_entry_dates()
-            
+
             print(f"Saved entry for {entry_date}")
         except Exception as e:
             print(f"Error saving entry for {entry_date}: {e}")
-    
+
     def _update_editor_for_date(self, entry_date) -> None:
         """Update text editor for a specific date."""
         if not self.text_editor:
             return
-        
+
         # Update placeholder text dynamically
-        new_placeholder = f"Start writing your thoughts for {entry_date.strftime('%B %d, %Y')}..."
+        new_placeholder = (
+            f"Start writing your thoughts for {entry_date.strftime('%B %d, %Y')}..."
+        )
         self.text_editor.update_placeholder(new_placeholder)
-        
+
         print(f"Editor updated for date: {entry_date}")
-    
+
     def _refresh_entry_dates(self) -> None:
         """Refresh entry dates in all UI components."""
         if not self.file_manager:
             return
-        
+
         try:
             entry_dates = self.file_manager.get_entry_dates()
-            
+
             # Update calendar
             if self.calendar_component:
                 self.calendar_component.update_entry_dates(entry_dates)
-            
+
             # Update file explorer
             if self.file_explorer:
                 self.file_explorer.update_entry_dates(entry_dates)
-                
+
         except Exception as e:
             print(f"Error refreshing entry dates: {e}")
-    
-    
+
+    def _update_entry_delete_button(self) -> None:
+        """Update the visibility of the entry delete button."""
+        if self.entry_delete_button:
+            # Show delete button only if entry exists
+            should_show = self.current_entry_exists
+            print(
+                f"Update delete button: current_entry_exists={self.current_entry_exists}, should_show={should_show}"
+            )
+            if self.entry_delete_button.visible != should_show:
+                self.entry_delete_button.visible = should_show
+                try:
+                    self.entry_delete_button.update()
+                    print(f"Delete button visibility updated to: {should_show}")
+                except Exception as e:
+                    print(f"Error updating delete button visibility: {e}")
+
+    def _on_delete_current_entry(self, e: ft.ControlEvent) -> None:
+        """Handle delete button click for current entry."""
+        _ = e
+        print(
+            f"Delete button clicked. current_entry_exists: {self.current_entry_exists}"
+        )
+        if not self.current_entry_exists:
+            print("No current entry exists, not showing delete dialog")
+            return
+
+        # Show simple confirmation overlay (macOS-friendly)
+        self._show_delete_confirmation()
+
+    def _show_delete_confirmation(self) -> None:
+        """Show delete confirmation using BottomSheet."""
+        colors = self.theme_manager.colors
+        entry_title = self.current_entry_date.strftime("%B %d, %Y")
+
+        def on_confirm(e):
+            """Handle delete confirmation."""
+            _ = e
+            print("User confirmed deletion")
+            self._hide_delete_confirmation()
+            # Delete the entry
+            self._on_file_deleted(self.current_entry_date)
+
+        def on_cancel(e):
+            """Handle delete cancellation."""
+            _ = e
+            print("User cancelled deletion")
+            self._hide_delete_confirmation()
+
+        # Create BottomSheet content
+        sheet_content = ft.Container(
+            content=ft.Column(
+                controls=[
+                    ft.Container(height=20),
+                    ft.Text(
+                        "Delete Entry",
+                        size=24,
+                        weight=ft.FontWeight.BOLD,
+                        color=colors.text_primary,
+                        text_align=ft.TextAlign.CENTER,
+                    ),
+                    ft.Container(height=10),
+                    ft.Text(
+                        f"Delete entry for {entry_title}?",
+                        size=16,
+                        color=colors.text_secondary,
+                        text_align=ft.TextAlign.CENTER,
+                    ),
+                    ft.Text(
+                        "This action cannot be undone.",
+                        size=14,
+                        color=colors.text_muted,
+                        text_align=ft.TextAlign.CENTER,
+                    ),
+                    ft.Container(height=30),
+                    ft.Row(
+                        controls=[
+                            ft.Container(
+                                content=ft.ElevatedButton(
+                                    "Cancel",
+                                    on_click=on_cancel,
+                                    style=ft.ButtonStyle(
+                                        color=colors.text_primary,
+                                        bgcolor=colors.surface_variant,
+                                    ),
+                                    width=120,
+                                ),
+                                expand=1,
+                            ),
+                            ft.Container(width=20),
+                            ft.Container(
+                                content=ft.ElevatedButton(
+                                    "Delete",
+                                    on_click=on_confirm,
+                                    style=ft.ButtonStyle(
+                                        color="#FFFFFF",
+                                        bgcolor=colors.error,
+                                    ),
+                                    width=120,
+                                ),
+                                expand=1,
+                            ),
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                    ),
+                    ft.Container(height=20),
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                tight=True,
+            ),
+            padding=ft.padding.all(20),
+            bgcolor=colors.surface,
+        )
+
+        # Create BottomSheet
+        self.delete_confirmation_sheet = ft.BottomSheet(
+            content=sheet_content,
+            dismissible=True,
+            on_dismiss=lambda _: print("Delete confirmation dismissed"),
+        )
+
+        # Show the sheet
+        try:
+            self.page.open(self.delete_confirmation_sheet)
+            print("Delete confirmation sheet shown")
+        except Exception as e:
+            print(f"Error showing delete confirmation sheet: {e}")
+
+    def _hide_delete_confirmation(self) -> None:
+        """Hide delete confirmation sheet."""
+        if self.delete_confirmation_sheet:
+            try:
+                self.page.close(self.delete_confirmation_sheet)
+                self.delete_confirmation_sheet = None
+                print("Delete confirmation sheet hidden")
+            except Exception as e:
+                print(f"Error hiding delete confirmation sheet: {e}")
+
     def run(self) -> None:
         """Run the application."""
         self.page.update()

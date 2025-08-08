@@ -211,8 +211,8 @@ class CalendarComponent:
             text_color = colors.text_on_primary
             border_color = colors.primary
         elif is_today:
-            bg_color = colors.primary + "20"  # Primary with opacity
-            text_color = colors.primary
+            bg_color = colors.primary + "40"  # Primary with 40% opacity for distinction
+            text_color = colors.text_on_primary  # White text for readability
             border_color = colors.primary
         else:
             bg_color = "transparent"
@@ -502,8 +502,8 @@ class MiniCalendar(CalendarComponent):
             bg_color = colors.primary
             text_color = colors.text_on_primary
         elif is_today:
-            bg_color = colors.primary + "20"
-            text_color = colors.primary
+            bg_color = colors.primary + "40"  # Primary with 40% opacity for distinction
+            text_color = colors.text_on_primary  # White text for readability
         else:
             bg_color = "transparent"
             text_color = colors.text_primary
