@@ -172,9 +172,15 @@ class JournalVaultApp:
         # Initialize file manager if not already done
         if not self.file_manager:
             self.file_manager = FileManager(self.storage_path)
+            print(f"Main: Initialized FileManager with path: {self.storage_path}")
         
-        # Get actual entry dates from file manager
-        actual_entry_dates = self.file_manager.get_entry_dates()
+        # Get actual entry dates from file manager (after ensuring it's properly initialized)
+        try:
+            actual_entry_dates = self.file_manager.get_entry_dates()
+            print(f"Main: Loaded {len(actual_entry_dates)} entry dates from storage")
+        except Exception as e:
+            print(f"Main: Error loading entry dates: {e}")
+            actual_entry_dates = set()
         
         # Left sidebar - Calendar and Files
         self.calendar_component = CalendarComponent(
@@ -183,13 +189,10 @@ class JournalVaultApp:
             entry_dates=actual_entry_dates
         )
         
-        # File manager for file operations
-        self.file_manager = FileManager(self.storage_path)
-        
-        # File explorer component
+        # File explorer component (reuse the same file_manager instance)
         self.file_explorer = FileExplorer(
             self.theme_manager,
-            file_manager=self.file_manager,
+            file_manager=self.file_manager,  # Use same instance
             on_file_select=self._on_file_selected,
             on_create_entry=self._on_file_created
         )
@@ -249,17 +252,8 @@ class JournalVaultApp:
                     ft.Row(
                         controls=[
                             self.entry_title_component,
-                            ft.Container(expand=True),
-                            ft.TextButton(
-                                text="Save",
-                                on_click=self._manual_save,
-                                style=ft.ButtonStyle(
-                                    color=colors.primary,
-                                    bgcolor={ft.ControlState.HOVERED: colors.hover}
-                                )
-                            )
                         ],
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        alignment=ft.MainAxisAlignment.START,
                         vertical_alignment=ft.CrossAxisAlignment.CENTER
                     ),
                     ft.Container(height=SPACING["sm"]),
@@ -454,10 +448,6 @@ class JournalVaultApp:
         """Handle auto-save from text editor."""
         self._save_entry_for_date(self.current_entry_date, content)
     
-    def _manual_save(self, e) -> None:
-        """Handle manual save button click."""
-        if self.text_editor:
-            self.text_editor.save_now()
     
     def _load_entry_for_date(self, entry_date) -> None:
         """Load entry content for a specific date."""

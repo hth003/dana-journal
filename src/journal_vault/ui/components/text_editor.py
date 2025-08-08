@@ -6,6 +6,7 @@ formatting shortcuts.
 """
 
 import asyncio
+import threading
 from typing import Callable, Optional
 import flet as ft
 from ..theme import (
@@ -117,6 +118,10 @@ class EnhancedTextEditor:
         self._content = ""
         self._last_saved_content = ""
         self._is_dirty = False
+        
+        # Auto-save state
+        self._save_timer: Optional[threading.Timer] = None
+        self._save_delay = auto_save_delay
         
         # Components
         self.text_field: Optional[ft.TextField] = None
@@ -252,26 +257,15 @@ class EnhancedTextEditor:
                 # Spacer
                 ft.Container(expand=True),
                 
-                # Save indicator
+                # Subtle save indicator (Obsidian-style)
                 ft.Container(
-                    content=ft.Row(
-                        controls=[
-                            ft.Icon(
-                                ft.Icons.SAVE_ALT,
-                                size=COMPONENT_SIZES["icon_sm"],
-                                color=colors.success if not self._is_dirty else colors.warning
-                            ),
-                            ThemedText(
-                                self.theme_manager,
-                                "Saved" if not self._is_dirty else "Unsaved changes",
-                                variant="muted",
-                                typography="caption"
-                            )
-                        ],
-                        spacing=SPACING["xs"],
-                        alignment=ft.MainAxisAlignment.END
+                    content=ft.Icon(
+                        ft.Icons.CIRCLE,
+                        size=8,
+                        color=colors.text_muted if self._is_dirty else colors.success
                     ),
-                    padding=ft.padding.symmetric(horizontal=SPACING["sm"])
+                    padding=ft.padding.symmetric(horizontal=SPACING["sm"]),
+                    tooltip="Unsaved changes" if self._is_dirty else "Saved"
                 )
             ],
             alignment=ft.MainAxisAlignment.START,
@@ -291,10 +285,8 @@ class EnhancedTextEditor:
         # Update save indicator
         self._update_save_indicator()
         
-        # Trigger auto-save
-        if self.auto_save_manager:
-            # Disable async for now to avoid event loop issues
-            pass
+        # Schedule debounced save using threading
+        self._schedule_debounced_save(new_content)
         
         # Notify content change
         if self.on_content_change:
@@ -310,10 +302,8 @@ class EnhancedTextEditor:
         # Update save indicator
         self._update_save_indicator()
         
-        # Trigger auto-save
-        if self.auto_save_manager:
-            # Disable async for now to avoid event loop issues
-            pass
+        # Schedule debounced save using threading
+        self._schedule_debounced_save(self._content)
         
         # Notify content change
         if self.on_content_change:
@@ -326,6 +316,10 @@ class EnhancedTextEditor:
     
     def _on_blur(self, _: ft.ControlEvent) -> None:
         """Handle text field blur."""
+        # Cancel any pending debounced save
+        if self._save_timer and self._save_timer.is_alive():
+            self._save_timer.cancel()
+        
         # Trigger immediate save on blur if there are unsaved changes
         if self._is_dirty and self.on_save:
             self.on_save(self._content)
@@ -341,6 +335,31 @@ class EnhancedTextEditor:
             self._is_dirty = False
             self._update_save_indicator()
     
+    def _schedule_debounced_save(self, content: str) -> None:
+        """Schedule a debounced save operation using threading."""
+        if not self.on_save or content == self._last_saved_content:
+            return
+        
+        # Cancel existing timer
+        if self._save_timer and self._save_timer.is_alive():
+            self._save_timer.cancel()
+        
+        # Schedule new save
+        self._save_timer = threading.Timer(self._save_delay, self._perform_save, args=[content])
+        self._save_timer.start()
+    
+    def _perform_save(self, content: str) -> None:
+        """Perform the actual save operation."""
+        if self.on_save and content != self._last_saved_content:
+            self.on_save(content)
+            self._last_saved_content = content
+            self._is_dirty = False
+            # Update indicator in main thread using page update
+            if hasattr(self, 'text_field') and self.text_field and hasattr(self.text_field, 'page') and self.text_field.page:
+                self.text_field.page.add(ft.Container())  # Trigger update
+                self._update_save_indicator()
+                self.text_field.page.update()
+    
     def _update_save_indicator(self) -> None:
         """Update the save status indicator."""
         if not self.toolbar:
@@ -348,19 +367,24 @@ class EnhancedTextEditor:
         
         # Find the save indicator container (last control in toolbar)
         save_container = self.toolbar.controls[-1]
-        if hasattr(save_container, 'content') and hasattr(save_container.content, 'controls'):
-            row_controls = save_container.content.controls
-            if len(row_controls) >= 2:
-                icon_control = row_controls[0]
-                text_control = row_controls[1]
-                
-                colors = self.theme_manager.colors
-                if self._is_dirty:
-                    icon_control.color = colors.warning
-                    text_control.value = "Unsaved changes"
-                else:
-                    icon_control.color = colors.success
-                    text_control.value = "Saved"
+        if hasattr(save_container, 'content') and hasattr(save_container.content, 'color'):
+            icon_control = save_container.content
+            colors = self.theme_manager.colors
+            
+            # Show small dot: muted when dirty, green when saved
+            if self._is_dirty:
+                icon_control.color = colors.text_muted
+                save_container.tooltip = "Unsaved changes"
+            else:
+                icon_control.color = colors.success
+                save_container.tooltip = "Saved"
+            
+            # Update the control
+            try:
+                icon_control.update()
+                save_container.update()
+            except:
+                pass  # Ignore update errors
     
     def _apply_bold(self) -> None:
         """Apply bold formatting."""
