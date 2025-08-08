@@ -11,6 +11,7 @@ from pathlib import Path
 import flet as ft
 from ..theme import ThemeManager, ThemedContainer, ThemedText, SPACING
 from ...storage.file_manager import FileManager
+from ...ai.download_model import ModelDownloadManager, DownloadProgress, format_bytes, format_speed, format_eta
 
 
 class OnboardingFlow:
@@ -21,13 +22,20 @@ class OnboardingFlow:
         self.on_complete = on_complete
         self.page = page
         self.current_step = 0
-        self.total_steps = 3
+        self.total_steps = 4
         self.vault_mode = "create"  # "create" or "load"
         self.onboarding_data = {
             'storage_path': None,
             'vault_name': 'My Journal',
             'parent_directory': None,
+            'ai_enabled': True,  # Default to AI enabled
+            'ai_model_downloaded': False,
+            'ai_skipped': False,
         }
+        
+        # AI download manager
+        self.ai_manager = ModelDownloadManager()
+        self.download_progress = self.ai_manager.progress  # Use the manager's progress instance
         
         # Create file picker for directory selection
         self.file_picker = ft.FilePicker(on_result=self._on_folder_selected)
@@ -107,6 +115,7 @@ class OnboardingFlow:
             self._create_welcome_step,
             self._create_privacy_step,
             self._create_storage_step,
+            self._create_ai_setup_step,
         ]
         
         return ft.Container(
@@ -280,6 +289,763 @@ class OnboardingFlow:
             vertical_alignment=ft.CrossAxisAlignment.START
         )
     
+    def _create_ai_setup_step(self) -> ft.Column:
+        """Create AI setup step with comparison cards and download options."""
+        colors = self.theme_manager.colors
+        
+        # Create UI components if not exists
+        if not hasattr(self, 'ai_setup_components_created'):
+            self._create_ai_setup_components()
+            self.ai_setup_components_created = True
+        
+        return ft.Column(
+            controls=[
+                # Header
+                ft.Container(
+                    content=ft.Icon(
+                        ft.Icons.PSYCHOLOGY_ROUNDED,
+                        size=60,
+                        color=colors.primary
+                    ),
+                    margin=ft.margin.only(bottom=20)
+                ),
+                ThemedText(
+                    self.theme_manager,
+                    "AI-Powered Insights",
+                    variant="primary",
+                    size=28,
+                    weight=ft.FontWeight.BOLD,
+                    text_align=ft.TextAlign.CENTER
+                ),
+                ft.Container(height=8),
+                ThemedText(
+                    self.theme_manager,
+                    "Add intelligent reflections and insights to your journaling experience",
+                    variant="secondary",
+                    size=16,
+                    text_align=ft.TextAlign.CENTER
+                ),
+                ft.Container(height=25),
+                
+                # Comparison Cards
+                self._create_ai_comparison_cards(),
+                
+                ft.Container(height=20),
+                
+                # AI Setup Options
+                self._get_ai_setup_content(),
+                
+                ft.Container(height=25),
+                self._create_step_buttons(
+                    next_text="Complete Setup" if not self._is_ai_download_needed() else "Complete Setup",
+                    show_next=True,
+                    is_final=True
+                )
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=0
+        )
+    
+    def _create_ai_setup_components(self) -> None:
+        """Create components for AI setup step."""
+        colors = self.theme_manager.colors
+        
+        # Download progress bar
+        self.download_progress_bar = ft.ProgressBar(
+            value=0,
+            width=400,
+            height=8,
+            bgcolor=colors.surface_variant,
+            color=colors.primary,
+            visible=False
+        )
+        
+        # Download status text
+        self.download_status_text = ThemedText(
+            self.theme_manager,
+            "",
+            variant="secondary",
+            size=12,
+            text_align=ft.TextAlign.CENTER
+        )
+    
+    def _create_ai_comparison_cards(self) -> ft.Row:
+        """Create interactive comparison cards for With AI vs Traditional with selection capability."""
+        colors = self.theme_manager.colors
+        
+        # Determine which option is currently selected
+        ai_selected = self.onboarding_data.get('ai_enabled', True)
+        
+        # Fixed width for both cards to ensure equal sizing
+        card_width = 260
+        
+        # With AI Card - interactive with selection feedback
+        with_ai_selected = ai_selected
+        with_ai_card = ft.GestureDetector(
+            content=ThemedContainer(
+                self.theme_manager,
+                variant="surface",  # Consistent base styling
+                content=ft.Column(
+                    controls=[
+                        # Header with selection indicator
+                        ft.Row(
+                            controls=[
+                                ft.Icon(
+                                    ft.Icons.CHECK_CIRCLE if with_ai_selected else ft.Icons.RADIO_BUTTON_UNCHECKED,
+                                    color=colors.primary if with_ai_selected else colors.text_secondary,
+                                    size=18
+                                ),
+                                ft.Icon(ft.Icons.AUTO_AWESOME, color=colors.primary, size=18),
+                                ThemedText(
+                                    self.theme_manager,
+                                    "With AI",
+                                    variant="primary" if with_ai_selected else "secondary",
+                                    size=15,
+                                    weight=ft.FontWeight.BOLD
+                                )
+                            ],
+                            spacing=6,
+                            alignment=ft.MainAxisAlignment.CENTER
+                        ),
+                        ft.Container(height=12),
+                        
+                        # Features - compact layout
+                        ft.Column(
+                            controls=[
+                                self._create_feature_item_compact("🔍", "Smart insights"),
+                                self._create_feature_item_compact("💭", "Mood reflections"),
+                                self._create_feature_item_compact("📈", "Pattern recognition"),
+                                self._create_feature_item_compact("✨", "Writing prompts"),
+                                self._create_feature_item_compact("🔒", "100% private")
+                            ],
+                            spacing=8,
+                            tight=True
+                        )
+                    ],
+                    spacing=0,
+                    horizontal_alignment=ft.CrossAxisAlignment.START,
+                    expand=True
+                ),
+                padding=ft.padding.all(SPACING["md"]),
+                border_radius=12,
+                border=ft.border.all(2 if with_ai_selected else 1, colors.primary if with_ai_selected else colors.border_subtle),
+                bgcolor=colors.surface,  # Consistent background
+                width=card_width,
+                expand=False
+            ),
+            on_tap=lambda e: self._select_ai_option("with_ai")
+        )
+        
+        # Traditional Card - interactive with selection feedback
+        traditional_selected = not ai_selected
+        traditional_card = ft.GestureDetector(
+            content=ThemedContainer(
+                self.theme_manager,
+                variant="surface",  # Same base styling as AI card
+                content=ft.Column(
+                    controls=[
+                        # Header with selection indicator
+                        ft.Row(
+                            controls=[
+                                ft.Icon(
+                                    ft.Icons.CHECK_CIRCLE if traditional_selected else ft.Icons.RADIO_BUTTON_UNCHECKED,
+                                    color=colors.primary if traditional_selected else colors.text_secondary,
+                                    size=18
+                                ),
+                                ft.Icon(ft.Icons.EDIT_NOTE, color=colors.text_secondary, size=18),
+                                ThemedText(
+                                    self.theme_manager,
+                                    "Traditional",
+                                    variant="primary" if traditional_selected else "secondary",
+                                    size=15,
+                                    weight=ft.FontWeight.BOLD
+                                )
+                            ],
+                            spacing=6,
+                            alignment=ft.MainAxisAlignment.CENTER
+                        ),
+                        ft.Container(height=12),
+                        
+                        # Features - compact layout with balanced text
+                        ft.Column(
+                            controls=[
+                                self._create_feature_item_compact("✍️", "Manual analysis"),
+                                self._create_feature_item_compact("📝", "Text editing"),
+                                self._create_feature_item_compact("📅", "Calendar view"),
+                                self._create_feature_item_compact("💾", "Simple storage"),
+                                self._create_feature_item_compact("🔒", "Complete privacy")
+                            ],
+                            spacing=8,
+                            tight=True
+                        )
+                    ],
+                    spacing=0,
+                    horizontal_alignment=ft.CrossAxisAlignment.START,
+                    expand=True
+                ),
+                padding=ft.padding.all(SPACING["md"]),
+                border_radius=12,
+                border=ft.border.all(2 if traditional_selected else 1, colors.primary if traditional_selected else colors.border_subtle),
+                bgcolor=colors.surface,  # Same background as AI card
+                width=card_width,
+                expand=False
+            ),
+            on_tap=lambda e: self._select_ai_option("traditional")
+        )
+        
+        return ft.Row(
+            controls=[
+                with_ai_card,
+                ft.Container(width=16),  # Reduced spacer
+                traditional_card
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            vertical_alignment=ft.CrossAxisAlignment.START,
+            spacing=0
+        )
+    
+    def _create_feature_item_compact(self, emoji: str, text: str, secondary: bool = False) -> ft.Row:
+        """Create a compact feature item for comparison cards with consistent styling."""
+        return ft.Row(
+            controls=[
+                ft.Container(
+                    content=ft.Text(emoji, size=14),
+                    width=18,
+                    alignment=ft.alignment.center_left
+                ),
+                ThemedText(
+                    self.theme_manager,
+                    text,
+                    variant="primary",  # Always use primary for consistent appearance
+                    size=12,
+                    text_align=ft.TextAlign.LEFT
+                )
+            ],
+            spacing=8,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            tight=True
+        )
+    
+    def _create_feature_list(self, features, secondary=False) -> ft.Column:
+        """Create a list of features for comparison cards with consistent sizing."""
+        feature_controls = []
+        
+        for emoji, text in features:
+            feature_controls.append(
+                ft.Row(
+                    controls=[
+                        ft.Container(
+                            content=ft.Text(emoji, size=16),
+                            width=24,  # Fixed width for emojis
+                            alignment=ft.alignment.center
+                        ),
+                        ft.Container(
+                            content=ThemedText(
+                                self.theme_manager,
+                                text,
+                                variant="secondary" if secondary else "primary",
+                                size=13,
+                                text_align=ft.TextAlign.LEFT
+                            ),
+                            expand=True
+                        )
+                    ],
+                    spacing=8,
+                    vertical_alignment=ft.CrossAxisAlignment.START,
+                    tight=True
+                )
+            )
+        
+        return ft.Column(
+            controls=feature_controls,
+            spacing=8,
+            tight=True
+        )
+    
+    def _get_ai_setup_content(self) -> ThemedContainer:
+        """Get AI setup content based on current state."""
+        colors = self.theme_manager.colors
+        
+        if self.ai_manager.is_model_available():
+            # Model already available
+            return self._create_ai_ready_content()
+        elif self.download_progress.status == "downloading":
+            # Download in progress
+            return self._create_download_progress_content()
+        elif self.download_progress.status == "complete":
+            # Download complete
+            return self._create_download_complete_content()
+        elif self.download_progress.status == "error":
+            # Download error
+            return self._create_download_error_content()
+        else:
+            # Initial state - show options
+            return self._create_ai_options_content()
+    
+    def _create_ai_ready_content(self) -> ThemedContainer:
+        """Content when AI model is already available."""
+        colors = self.theme_manager.colors
+        
+        # Use consistent width for all cards
+        card_width = 536
+        
+        return ThemedContainer(
+            self.theme_manager,
+            variant="surface",
+            content=ft.Column(
+                controls=[
+                    ft.Row(
+                        controls=[
+                            ft.Icon(ft.Icons.CHECK_CIRCLE, color=colors.success, size=24),
+                            ThemedText(
+                                self.theme_manager,
+                                "AI Model Ready",
+                                variant="primary",
+                                size=16,
+                                weight=ft.FontWeight.W_600
+                            )
+                        ],
+                        spacing=8,
+                        alignment=ft.MainAxisAlignment.CENTER
+                    ),
+                    ft.Container(height=8),
+                    ThemedText(
+                        self.theme_manager,
+                        "The AI model is already downloaded and ready to provide insights on your journal entries.",
+                        variant="secondary",
+                        size=13,
+                        text_align=ft.TextAlign.CENTER
+                    )
+                ],
+                spacing=0
+            ),
+            padding=ft.padding.all(SPACING["lg"]),
+            border_radius=12,
+            border=ft.border.all(1, colors.success),
+            bgcolor=colors.surface,
+            width=card_width,  # Set consistent width
+            expand=False  # Prevent expansion
+        )
+    
+    def _create_ai_options_content(self) -> ThemedContainer:
+        """Simplified content showing single action button based on AI selection."""
+        colors = self.theme_manager.colors
+        
+        # Check system requirements
+        requirements = self.ai_manager.check_system_requirements()
+        
+        # Calculate consistent width for all cards (matching the two comparison cards)
+        card_width = 536  # Same width as download progress card
+        
+        controls = []
+        
+        # System requirements check
+        if requirements["meets_requirements"]:
+            controls.extend([
+                ft.Row(
+                    controls=[
+                        ft.Icon(ft.Icons.CHECK_CIRCLE_OUTLINE, color=colors.success, size=20),
+                        ThemedText(
+                            self.theme_manager,
+                            "System Ready for AI",
+                            variant="primary",
+                            size=14,
+                            weight=ft.FontWeight.W_500
+                        )
+                    ],
+                    spacing=8,
+                    alignment=ft.MainAxisAlignment.CENTER
+                ),
+                ft.Container(height=4),
+                ThemedText(
+                    self.theme_manager,
+                    f"Available space: {requirements['disk_space_gb']}GB | Memory: {requirements['available_memory_gb']}GB",
+                    variant="secondary",
+                    size=11,
+                    text_align=ft.TextAlign.CENTER
+                ),
+                ft.Container(height=16)
+            ])
+        else:
+            controls.extend([
+                ft.Row(
+                    controls=[
+                        ft.Icon(ft.Icons.WARNING, color=colors.warning, size=20),
+                        ThemedText(
+                            self.theme_manager,
+                            "System Requirements Check",
+                            variant="primary",
+                            size=14,
+                            weight=ft.FontWeight.W_500
+                        )
+                    ],
+                    spacing=8,
+                    alignment=ft.MainAxisAlignment.CENTER
+                ),
+                ft.Container(height=8)
+            ])
+            
+            for issue in requirements["issues"]:
+                controls.extend([
+                    ThemedText(
+                        self.theme_manager,
+                        f"⚠️ {issue}",
+                        variant="secondary",
+                        size=12,
+                        text_align=ft.TextAlign.LEFT
+                    ),
+                    ft.Container(height=4)
+                ])
+            
+            controls.append(ft.Container(height=12))
+        
+        # Single action button based on selection
+        ai_enabled = self.onboarding_data.get('ai_enabled', True)
+        
+        if ai_enabled:
+            # AI is selected - show download button
+            if requirements["meets_requirements"]:
+                action_button = ft.ElevatedButton(
+                    text="Download AI Model (~2.1GB)",
+                    icon=ft.Icons.DOWNLOAD,
+                    on_click=self._start_ai_download,
+                    style=ft.ButtonStyle(
+                        bgcolor=colors.primary,
+                        color=colors.text_on_primary,
+                        text_style=ft.TextStyle(size=14, weight=ft.FontWeight.W_500),
+                        padding=ft.padding.symmetric(horizontal=20, vertical=12)
+                    )
+                )
+            else:
+                # Requirements not met - show disabled button
+                action_button = ft.ElevatedButton(
+                    text="System Requirements Not Met",
+                    icon=ft.Icons.WARNING,
+                    disabled=True,
+                    style=ft.ButtonStyle(
+                        bgcolor=colors.surface_variant,
+                        color=colors.text_secondary,
+                        text_style=ft.TextStyle(size=14, weight=ft.FontWeight.W_500),
+                        padding=ft.padding.symmetric(horizontal=20, vertical=12)
+                    )
+                )
+        else:
+            # Traditional is selected - show continue button
+            action_button = ft.ElevatedButton(
+                text="Continue with Traditional Journal",
+                icon=ft.Icons.CHECK,
+                on_click=self._continue_without_ai,
+                style=ft.ButtonStyle(
+                    bgcolor=colors.primary,
+                    color=colors.text_on_primary,
+                    text_style=ft.TextStyle(size=14, weight=ft.FontWeight.W_500),
+                    padding=ft.padding.symmetric(horizontal=20, vertical=12)
+                )
+            )
+        
+        controls.extend([
+            ft.Row(
+                controls=[action_button],
+                spacing=12,
+                alignment=ft.MainAxisAlignment.CENTER
+            )
+        ])
+        
+        return ThemedContainer(
+            self.theme_manager,
+            variant="surface",
+            content=ft.Column(controls=controls, spacing=0),
+            padding=ft.padding.all(SPACING["lg"]),
+            border_radius=12,
+            border=ft.border.all(1, colors.border_subtle),
+            width=card_width,  # Set consistent width
+            expand=False  # Prevent expansion
+        )
+    
+    def _create_download_progress_content(self) -> ThemedContainer:
+        """Content showing download progress with real-time updates."""
+        colors = self.theme_manager.colors
+        
+        # Calculate width to match the two cards above (260 + 16 + 260 = 536)
+        download_card_width = 536
+        
+        # Create progress components if they don't exist
+        if not hasattr(self, 'download_progress_bar'):
+            self.download_progress_bar = ft.ProgressBar(
+                value=0,
+                width=400,  # Fixed width for better visibility
+                height=8,
+                bgcolor=colors.surface_variant,
+                color=colors.primary
+            )
+            self.download_status_text = ThemedText(
+                self.theme_manager,
+                "Initializing download...",
+                variant="secondary",
+                size=12,
+                text_align=ft.TextAlign.CENTER
+            )
+        
+        # Update progress bar with proper value calculation
+        if self.download_progress.total_bytes > 0:
+            progress_value = self.download_progress.bytes_downloaded / self.download_progress.total_bytes
+            self.download_progress_bar.value = progress_value
+            self.download_progress_bar.visible = True
+        else:
+            self.download_progress_bar.value = 0
+            self.download_progress_bar.visible = True
+        
+        # Update status text with real-time info
+        if self.download_progress.download_speed > 0:
+            downloaded_mb = format_bytes(self.download_progress.bytes_downloaded)
+            total_mb = format_bytes(self.download_progress.total_bytes)
+            speed = format_speed(self.download_progress.download_speed)
+            eta = format_eta(self.download_progress.eta_seconds)
+            
+            status = f"Downloading: {downloaded_mb} / {total_mb} at {speed} - ETA: {eta}"
+        else:
+            status = "Initializing download..."
+        
+        self.download_status_text.value = status
+        
+        return ThemedContainer(
+            self.theme_manager,
+            variant="surface",
+            content=ft.Column([
+                ft.Row([
+                    ft.Icon(ft.Icons.DOWNLOAD, color=colors.primary, size=20),
+                    ThemedText(self.theme_manager, "Downloading AI Model", variant="primary", size=14, weight=ft.FontWeight.W_500)
+                ], spacing=8, alignment=ft.MainAxisAlignment.CENTER),
+                ft.Container(height=12),
+                self.download_progress_bar,
+                ft.Container(height=8),
+                self.download_status_text,
+                ft.Container(height=16),
+                ft.TextButton(
+                    text="Cancel Download",
+                    icon=ft.Icons.CANCEL,
+                    on_click=self._cancel_ai_download,
+                    style=ft.ButtonStyle(color=colors.text_secondary, text_style=ft.TextStyle(size=12))
+                )
+            ], spacing=0),
+            padding=ft.padding.all(SPACING["lg"]),
+            border_radius=12,
+            border=ft.border.all(1, colors.primary),
+            width=download_card_width,  # Match the width of both cards + spacer
+            expand=False  # Ensure it doesn't expand beyond the specified width
+        )
+    
+    def _create_download_complete_content(self) -> ThemedContainer:
+        """Content when download is complete."""
+        colors = self.theme_manager.colors
+        
+        # Use consistent width for all cards
+        card_width = 536
+        
+        return ThemedContainer(
+            self.theme_manager,
+            variant="surface",
+            content=ft.Column(
+                controls=[
+                    ft.Row(
+                        controls=[
+                            ft.Icon(ft.Icons.CHECK_CIRCLE, color=colors.success, size=24),
+                            ThemedText(
+                                self.theme_manager,
+                                "AI Model Downloaded Successfully",
+                                variant="primary",
+                                size=16,
+                                weight=ft.FontWeight.W_600
+                            )
+                        ],
+                        spacing=8,
+                        alignment=ft.MainAxisAlignment.CENTER
+                    ),
+                    ft.Container(height=8),
+                    ThemedText(
+                        self.theme_manager,
+                        "Your AI-powered journaling experience is ready! The model will provide insights and reflections on your entries.",
+                        variant="secondary",
+                        size=13,
+                        text_align=ft.TextAlign.CENTER
+                    )
+                ],
+                spacing=0
+            ),
+            padding=ft.padding.all(SPACING["lg"]),
+            border_radius=12,
+            border=ft.border.all(1, colors.success),
+            width=card_width,  # Set consistent width
+            expand=False  # Prevent expansion
+        )
+    
+    def _create_download_error_content(self) -> ThemedContainer:
+        """Content when download encounters an error."""
+        colors = self.theme_manager.colors
+        
+        # Use consistent width for all cards
+        card_width = 536
+        
+        return ThemedContainer(
+            self.theme_manager,
+            variant="surface",
+            content=ft.Column(
+                controls=[
+                    ft.Row(
+                        controls=[
+                            ft.Icon(ft.Icons.ERROR, color=colors.error, size=20),
+                            ThemedText(
+                                self.theme_manager,
+                                "Download Failed",
+                                variant="primary",
+                                size=14,
+                                weight=ft.FontWeight.W_500
+                            )
+                        ],
+                        spacing=8,
+                        alignment=ft.MainAxisAlignment.CENTER
+                    ),
+                    ft.Container(height=8),
+                    ThemedText(
+                        self.theme_manager,
+                        self.download_progress.error_message or "An error occurred during download.",
+                        variant="secondary",
+                        size=12,
+                        text_align=ft.TextAlign.CENTER
+                    ),
+                    ft.Container(height=16),
+                    ft.Row(
+                        controls=[
+                            ft.ElevatedButton(
+                                text="Retry Download",
+                                icon=ft.Icons.REFRESH,
+                                on_click=self._start_ai_download,
+                                style=ft.ButtonStyle(
+                                    bgcolor=colors.primary,
+                                    color=colors.text_on_primary,
+                                    text_style=ft.TextStyle(size=13)
+                                )
+                            ),
+                            ft.TextButton(
+                                text="Choose Traditional",
+                                on_click=lambda e: self._select_ai_option("traditional"),
+                                style=ft.ButtonStyle(
+                                    color=colors.text_secondary,
+                                    text_style=ft.TextStyle(size=13)
+                                )
+                            )
+                        ],
+                        spacing=12,
+                        alignment=ft.MainAxisAlignment.CENTER
+                    )
+                ],
+                spacing=0
+            ),
+            padding=ft.padding.all(SPACING["lg"]),
+            border_radius=12,
+            border=ft.border.all(1, colors.error),
+            width=card_width,  # Set consistent width
+            expand=False  # Prevent expansion
+        )
+    
+    def _is_ai_download_needed(self) -> bool:
+        """Check if AI download is needed to proceed."""
+        return (not self.ai_manager.is_model_available() and 
+                self.download_progress.status not in ["complete", "downloading"] and
+                not self.onboarding_data.get('ai_skipped', False))
+    
+    def _start_ai_download(self, e) -> None:
+        """Start AI model download with improved UI updates."""
+        try:
+            # Use the download manager's progress instance
+            self.download_progress = self.ai_manager.progress
+            self.download_progress.status = "downloading"  # Set status immediately
+            self.onboarding_data['ai_enabled'] = True
+            
+            # Ensure progress bar is initialized
+            if not hasattr(self, 'download_progress_bar'):
+                colors = self.theme_manager.colors
+                self.download_progress_bar = ft.ProgressBar(
+                    value=0,
+                    width=400,
+                    height=8,
+                    bgcolor=colors.surface_variant,
+                    color=colors.primary
+                )
+                self.download_status_text = ThemedText(
+                    self.theme_manager,
+                    "Initializing download...",
+                    variant="secondary",
+                    size=12,
+                    text_align=ft.TextAlign.CENTER
+                )
+            
+            # Start download with progress callback
+            def on_progress(progress: DownloadProgress):
+                self.download_progress = progress
+                # Update UI on main thread with proper error handling
+                if hasattr(self, 'container') and self.container:
+                    try:
+                        # Update the content
+                        self.container.content.controls[2] = self._get_current_step_content()
+                        # Force update with better error handling
+                        if self.page:
+                            self.page.update()
+                        else:
+                            self.container.update()
+                    except Exception as ex:
+                        print(f"UI update error: {ex}")
+            
+            # Start the download
+            self.ai_manager.download_model_async(on_progress)
+            
+            # Immediate UI update to show download starting
+            self.container.content.controls[2] = self._get_current_step_content()
+            if self.page:
+                self.page.update()
+            else:
+                self.container.update()
+            
+        except Exception as ex:
+            self.download_progress.status = "error"
+            self.download_progress.error_message = f"Failed to start download: {str(ex)}"
+            # Update UI to show error state
+            self.container.content.controls[2] = self._get_current_step_content()
+            if self.page:
+                self.page.update()
+            else:
+                self.container.update()
+    
+    def _cancel_ai_download(self, e) -> None:
+        """Cancel AI model download."""
+        try:
+            # Cancel the download
+            self.ai_manager.cancel_download()
+            
+            # Reset download progress
+            self.download_progress.status = "error"
+            self.download_progress.error_message = "Download cancelled by user"
+            
+            # Update UI to show error state
+            self.container.content.controls[2] = self._get_current_step_content()
+            if self.page:
+                self.page.update()
+            else:
+                self.container.update()
+                
+        except Exception as ex:
+            print(f"Cancel download error: {ex}")
+            # Fallback: just update the UI
+            self.download_progress.status = "error"
+            self.download_progress.error_message = "Download cancelled by user"
+            self.container.content.controls[2] = self._get_current_step_content()
+            if self.page:
+                self.page.update()
+            else:
+                self.container.update()
+    
+
+    
     def _create_storage_step(self) -> ft.Column:
         """Create dual-mode vault setup step with clear create/load distinction."""
         colors = self.theme_manager.colors
@@ -351,9 +1117,9 @@ class OnboardingFlow:
                 
                 ft.Container(height=20),
                 self._create_step_buttons(
-                    next_text="Create Vault" if self.vault_mode == "create" else "Complete Setup",
+                    next_text="Continue to AI Setup",
                     show_next=self._is_ready_to_proceed(),
-                    is_final=True
+                    is_final=False
                 )
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -1042,6 +1808,16 @@ class OnboardingFlow:
     
     def _go_next(self, e) -> None:
         """Go to next step."""
+        # Handle special case for AI step (now at step 3)
+        if self.current_step == 3:  # AI step (0-indexed)
+            # Check if we need to wait for download or if user has made a choice
+            if (self.download_progress.status == "downloading" or 
+                (not self.ai_manager.is_model_available() and 
+                 not self.onboarding_data.get('ai_skipped', False) and
+                 self.download_progress.status not in ["complete", "error"])):
+                # Can't proceed yet - download in progress or no choice made
+                return
+        
         if self.current_step < self.total_steps - 1:
             self.current_step += 1
             self._update_step_content()
@@ -1052,6 +1828,14 @@ class OnboardingFlow:
     def _complete_onboarding(self, e) -> None:
         """Complete the onboarding process based on selected mode."""
         try:
+            # Update AI settings in onboarding data
+            if self.ai_manager.is_model_available() or self.download_progress.status == "complete":
+                self.onboarding_data['ai_enabled'] = True
+                self.onboarding_data['ai_model_downloaded'] = True
+                model_path = self.ai_manager.get_model_path()
+                if model_path:
+                    self.onboarding_data['ai_model_path'] = str(model_path)
+            
             if self.vault_mode == "create":
                 # Create new vault
                 storage_path = self.onboarding_data.get('storage_path')
@@ -1405,3 +2189,88 @@ class OnboardingFlow:
         if self.file_picker not in page.overlay:
             page.overlay.append(self.file_picker)
             page.update()
+
+    def _select_ai_option(self, option: str) -> None:
+        """Handle AI option selection with visual feedback."""
+        # Update onboarding data
+        self.onboarding_data['ai_enabled'] = (option == "with_ai")
+        
+        # Update the action section based on selection
+        self._update_action_section()
+        
+        # Update UI
+        if self.page:
+            self.page.update()
+        else:
+            self.container.update()
+
+    def _update_action_section(self) -> None:
+        """Update the action section based on AI selection."""
+        # Recreate the AI setup content to reflect the new selection
+        if hasattr(self, 'container') and self.container:
+            try:
+                self.container.content.controls[2] = self._get_current_step_content()
+            except Exception:
+                pass  # Ignore UI update errors
+    
+    def _continue_without_ai(self, e) -> None:
+        """Handle continuing without AI features."""
+        # Mark AI as skipped
+        self.onboarding_data['ai_enabled'] = False
+        self.onboarding_data['ai_skipped'] = True
+        
+        # Show confirmation dialog
+        self._show_traditional_confirmation()
+    
+    def _show_traditional_confirmation(self) -> None:
+        """Show confirmation dialog for traditional journal setup."""
+        colors = self.theme_manager.colors
+        
+        def confirm_traditional(e):
+            dialog.open = False
+            if self.page:
+                self.page.update()
+            # Proceed to next step
+            self._go_next(e)
+        
+        def go_back(e):
+            dialog.open = False
+            if self.page:
+                self.page.update()
+        
+        dialog = ft.AlertDialog(
+            title=ft.Text("Continue with Traditional Journal?", weight=ft.FontWeight.BOLD),
+            content=ft.Container(
+                content=ft.Column([
+                    ft.Text("You've chosen the traditional journaling experience:", size=14),
+                    ft.Container(height=12),
+                    ft.Text("✓ Manual reflection and analysis", size=13),
+                    ft.Text("✓ Basic text editing & formatting", size=13),
+                    ft.Text("✓ Calendar view of entries", size=13),
+                    ft.Text("✓ Simple storage & organization", size=13),
+                    ft.Text("✓ Complete privacy", size=13),
+                    ft.Container(height=12),
+                    ft.Container(
+                        content=ft.Text(
+                            "💡 You can always add AI enhancement later in Settings.",
+                            size=12,
+                            color=colors.text_secondary,
+                            italic=True
+                        ),
+                        padding=ft.padding.all(8),
+                        bgcolor=colors.surface_variant,
+                        border_radius=8
+                    )
+                ], tight=True, spacing=4),
+                width=400
+            ),
+            actions=[
+                ft.TextButton("Go Back", on_click=go_back, style=ft.ButtonStyle(color=colors.primary)),
+                ft.ElevatedButton("Continue Setup", on_click=confirm_traditional, style=ft.ButtonStyle(bgcolor=colors.primary))
+            ]
+        )
+        
+        if self.page:
+            self.page.dialog = dialog
+            dialog.open = True
+            self.page.update()

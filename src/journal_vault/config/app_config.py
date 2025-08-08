@@ -72,6 +72,42 @@ class AppConfig:
         self._config_data['vault_name'] = name
         self._save_config()
     
+    def is_ai_enabled(self) -> bool:
+        """Check if AI features are enabled."""
+        return self._config_data.get('ai_enabled', False)
+    
+    def set_ai_enabled(self, enabled: bool) -> None:
+        """Set AI features enabled status."""
+        self._config_data['ai_enabled'] = enabled
+        self._save_config()
+    
+    def is_ai_model_downloaded(self) -> bool:
+        """Check if AI model has been downloaded."""
+        return self._config_data.get('ai_model_downloaded', False)
+    
+    def set_ai_model_downloaded(self, downloaded: bool) -> None:
+        """Set AI model downloaded status."""
+        self._config_data['ai_model_downloaded'] = downloaded
+        self._save_config()
+    
+    def was_ai_skipped_during_onboarding(self) -> bool:
+        """Check if AI was skipped during onboarding."""
+        return self._config_data.get('ai_skipped_during_onboarding', False)
+    
+    def set_ai_skipped_during_onboarding(self, skipped: bool) -> None:
+        """Set AI skipped during onboarding status."""
+        self._config_data['ai_skipped_during_onboarding'] = skipped
+        self._save_config()
+    
+    def get_ai_model_path(self) -> Optional[str]:
+        """Get the path to the AI model file."""
+        return self._config_data.get('ai_model_path')
+    
+    def set_ai_model_path(self, path: str) -> None:
+        """Set the AI model file path."""
+        self._config_data['ai_model_path'] = path
+        self._save_config()
+    
     
     def get_window_state(self) -> Dict[str, Any]:
         """Get saved window state."""

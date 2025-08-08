@@ -127,6 +127,20 @@ class JournalVaultApp:
         vault_name = onboarding_data.get("vault_name")
         if vault_name:
             app_config.set_vault_name(vault_name)
+        
+        # Save AI configuration
+        ai_enabled = onboarding_data.get("ai_enabled", False)
+        app_config.set_ai_enabled(ai_enabled)
+        
+        ai_model_downloaded = onboarding_data.get("ai_model_downloaded", False)
+        app_config.set_ai_model_downloaded(ai_model_downloaded)
+        
+        ai_skipped = onboarding_data.get("ai_skipped", False)
+        app_config.set_ai_skipped_during_onboarding(ai_skipped)
+        
+        ai_model_path = onboarding_data.get("ai_model_path")
+        if ai_model_path:
+            app_config.set_ai_model_path(ai_model_path)
 
         # No theme preference to save - always dark mode
 
