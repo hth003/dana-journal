@@ -155,3 +155,4 @@ Settings are automatically persisted to `~/.journal_vault/config.json`. Key sett
 - Use `pytest` as the test framework with async support
 
 This codebase prioritizes user privacy, clean architecture, and rapid development cycles while maintaining code quality through consistent patterns and comprehensive testing.
+- for all test generated, store it in /tests folder

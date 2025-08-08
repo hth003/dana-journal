@@ -545,6 +545,12 @@ class FileExplorer:
         if self.showing_search and self.search_field and self.search_field.value:
             self._perform_search(self.search_field.value)
     
+    def update_entry_dates(self, entry_dates: Set[date]) -> None:
+        """Update entry dates and refresh the file tree."""
+        self.entry_dates = entry_dates
+        self._build_file_tree()
+        self._update_tree_view()
+    
     def select_date(self, selected_date: date) -> None:
         """Select a specific date in the file explorer."""
         self.selected_date = selected_date
