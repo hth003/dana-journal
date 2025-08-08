@@ -70,12 +70,11 @@ class FileExplorer:
         self.search_results: Optional[ft.Column] = None
         self.showing_search = False
         
-        # Load initial data
-        self._load_entry_dates()
-        self._build_file_tree()
-        
-        # Build the component
+        # Build the component first
         self.container = self._build_component()
+        
+        # Load initial data after UI is built
+        self._initialize_data()
     
     def _build_component(self) -> ft.Control:
         """Build the file explorer UI."""
@@ -174,16 +173,43 @@ class FileExplorer:
             expand=True
         )
     
+    def _initialize_data(self) -> None:
+        """Initialize file explorer data after UI is built."""
+        try:
+            # First, scan existing files to populate the database
+            print("FileExplorer: Scanning existing files...")
+            scanned_count = self.file_manager.scan_existing_files()
+            print(f"FileExplorer: Scanned {scanned_count} files")
+            
+            # Then load entry dates
+            self._load_entry_dates()
+            
+            # Build the file tree
+            self._build_file_tree()
+            
+        except Exception as e:
+            print(f"Error initializing FileExplorer data: {e}")
+            self.entry_dates = set()
+            self._build_empty_tree()
+    
     def _load_entry_dates(self) -> None:
         """Load all entry dates from the file manager."""
         try:
             self.entry_dates = self.file_manager.get_entry_dates()
+            print(f"FileExplorer: Loaded {len(self.entry_dates)} entry dates")
         except Exception as e:
             print(f"Error loading entry dates: {e}")
             self.entry_dates = set()
     
     def _build_file_tree(self) -> None:
         """Build the file tree structure from entry dates."""
+        if not self.entry_dates:
+            print("FileExplorer: No entry dates found, building empty tree")
+            self._build_empty_tree()
+            return
+            
+        print(f"FileExplorer: Building tree with {len(self.entry_dates)} entries")
+        
         # Create root node
         self.file_tree = FileTreeNode("Entries", self.file_manager.entries_path)
         
@@ -240,15 +266,67 @@ class FileExplorer:
         
         # Update tree view
         self._update_tree_view()
+        print(f"FileExplorer: Tree built with {len(year_nodes)} years and {len(month_nodes)} months")
+    
+    def _build_empty_tree(self) -> None:
+        """Build an empty file tree when no entries exist."""
+        self.file_tree = FileTreeNode("Entries", self.file_manager.entries_path)
+        self._update_tree_view()
     
     def _update_tree_view(self) -> None:
         """Update the tree view display."""
-        if not self.tree_view or not self.file_tree:
+        if not self.tree_view:
+            print("FileExplorer: Tree view not available for update")
             return
         
+        if not self.file_tree:
+            print("FileExplorer: No file tree to display")
+            return
+        
+        print(f"FileExplorer: Updating tree view with {len(self.file_tree.children)} top-level nodes")
+        
         self.tree_view.controls.clear()
-        self._add_tree_nodes(self.file_tree.children, self.tree_view)
-        self.tree_view.update()
+        
+        if not self.file_tree.children:
+            # Show empty state message
+            colors = self.theme_manager.colors
+            self.tree_view.controls.append(
+                ft.Container(
+                    content=ft.Column(
+                        controls=[
+                            ft.Icon(
+                                ft.Icons.FOLDER_OPEN_OUTLINED,
+                                size=48,
+                                color=colors.text_muted
+                            ),
+                            ThemedText(
+                                self.theme_manager,
+                                "No entries found",
+                                variant="muted",
+                                typography="body_sm"
+                            ),
+                            ThemedText(
+                                self.theme_manager,
+                                "Create your first entry to get started",
+                                variant="muted",
+                                typography="caption"
+                            )
+                        ],
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        spacing=SPACING["sm"]
+                    ),
+                    padding=ft.padding.all(SPACING["lg"]),
+                    alignment=ft.alignment.center
+                )
+            )
+        else:
+            self._add_tree_nodes(self.file_tree.children, self.tree_view)
+        
+        try:
+            self.tree_view.update()
+            print("FileExplorer: Tree view updated successfully")
+        except Exception as e:
+            print(f"Error updating tree view: {e}")
     
     def _add_tree_nodes(self, nodes: List[FileTreeNode], container: ft.Column) -> None:
         """Recursively add tree nodes to the container."""
@@ -272,7 +350,7 @@ class FileExplorer:
     def _create_tree_node_control(self, node: FileTreeNode) -> ft.Control:
         """Create a control for a tree node."""
         colors = self.theme_manager.colors
-        depth = node.get_depth()
+        # depth = node.get_depth()  # Not currently used but may be needed for indentation
         
         # Determine icon
         if node.is_file:
@@ -394,7 +472,7 @@ class FileExplorer:
         if not self.search_results:
             return
         
-        colors = self.theme_manager.colors
+        # colors = self.theme_manager.colors  # Colors available from theme_manager if needed
         self.search_results.controls.clear()
         
         if not results:
@@ -438,6 +516,7 @@ class FileExplorer:
         
         # Create preview text (first 100 chars)
         preview = entry.content[:100] + "..." if len(entry.content) > 100 else entry.content
+        _ = query  # Keep query parameter for potential highlighting in future
         
         return ft.Container(
             content=ft.Column(
@@ -527,20 +606,22 @@ class FileExplorer:
     
     def _on_new_entry(self, e: ft.ControlEvent) -> None:
         """Handle new entry creation."""
+        _ = e  # Parameter required by Flet event signature
         today = date.today()
         if self.on_create_entry:
             self.on_create_entry(today)
     
     def _on_refresh(self, e: ft.ControlEvent) -> None:
         """Handle refresh request."""
+        _ = e  # Parameter required by Flet event signature
         self.refresh()
     
     # Public methods
     
     def refresh(self) -> None:
         """Refresh the file explorer."""
-        self._load_entry_dates()
-        self._build_file_tree()
+        print("FileExplorer: Refreshing...")
+        self._initialize_data()
         
         if self.showing_search and self.search_field and self.search_field.value:
             self._perform_search(self.search_field.value)
