@@ -5,13 +5,12 @@ A privacy-first desktop journaling application with local AI-powered insights.
 """
 
 from datetime import datetime, timedelta, date
-from typing import Set, Dict, Any
+from typing import Set, Dict, Any, Optional
 import flet as ft
 from .ui.theme import (
     theme_manager,
     ThemedContainer,
     ThemedText,
-    ThemedCard,
     SPACING,
     COMPONENT_SIZES,
 )
@@ -24,6 +23,7 @@ from .ui.components import (
 )
 from .config import app_config
 from .storage.file_manager import FileManager, JournalEntry
+from .ai import AIReflectionService, AIServiceConfig
 
 
 class JournalVaultApp:
@@ -57,17 +57,23 @@ class JournalVaultApp:
         self.entry_title_component = None
         self.ai_reflection_component = None  # NEW
 
+        # AI service
+        self.ai_service: Optional[AIReflectionService] = None
+        self._ai_thread = None  # Track AI generation threads
+
         # Current entry state
         self.current_entry_date = self.selected_date.date()
         self.current_entry_content = ""
         self.current_entry_exists = False
-        self._ai_process = None  # NEW: Track AI processes
 
         # Delete confirmation UI
         self.delete_confirmation_sheet = None
 
         # Configure page
         self._setup_page()
+
+        # Initialize AI service
+        self._initialize_ai_service()
 
         # Create appropriate layout
         if self.is_onboarded:
@@ -127,17 +133,17 @@ class JournalVaultApp:
         vault_name = onboarding_data.get("vault_name")
         if vault_name:
             app_config.set_vault_name(vault_name)
-        
+
         # Save AI configuration
         ai_enabled = onboarding_data.get("ai_enabled", False)
         app_config.set_ai_enabled(ai_enabled)
-        
+
         ai_model_downloaded = onboarding_data.get("ai_model_downloaded", False)
         app_config.set_ai_model_downloaded(ai_model_downloaded)
-        
+
         ai_skipped = onboarding_data.get("ai_skipped", False)
         app_config.set_ai_skipped_during_onboarding(ai_skipped)
-        
+
         ai_model_path = onboarding_data.get("ai_model_path")
         if ai_model_path:
             app_config.set_ai_model_path(ai_model_path)
@@ -170,6 +176,46 @@ class JournalVaultApp:
 
         self._create_main_layout()
         self.page.update()
+
+    def _initialize_ai_service(self) -> None:
+        """Initialize the AI reflection service."""
+        try:
+            # Get AI settings from configuration
+            ai_inference_settings = app_config.get_ai_inference_settings()
+
+            # Configure AI service with user preferences
+            ai_config = AIServiceConfig(
+                cache_enabled=ai_inference_settings.get("cache_enabled", True),
+                cache_expiry_hours=ai_inference_settings.get("cache_expiry_hours", 168),
+                auto_load_model=ai_inference_settings.get("auto_load_model", False),
+            )
+
+            # Initialize service
+            self.ai_service = AIReflectionService(ai_config)
+
+            # Update service status
+            app_config.update_ai_service_status(
+                {
+                    "last_model_load_success": self.ai_service.is_available,
+                    "model_load_count": app_config.get_ai_service_status().get(
+                        "model_load_count", 0
+                    )
+                    + 1,
+                }
+            )
+
+            print(f"AI service initialized. Available: {self.ai_service.is_available}")
+
+        except Exception as e:
+            error_msg = f"Failed to initialize AI service: {e}"
+            print(error_msg)
+
+            # Update error status in config
+            app_config.update_ai_service_status(
+                {"last_model_load_error": str(e), "last_model_load_success": False}
+            )
+
+            self.ai_service = None
 
     def _create_main_layout(self) -> None:
         """Create the main three-panel layout with Obsidian-like design."""
@@ -302,7 +348,7 @@ class JournalVaultApp:
         self.ai_reflection_component = AIReflectionComponent(
             self.theme_manager,
             on_regenerate=self._on_ai_regenerate,
-            on_hide=self._on_ai_hide
+            on_hide=self._on_ai_hide,
         )
 
         journal_entry_section = ft.Container(
@@ -341,7 +387,7 @@ class JournalVaultApp:
 
         # Load initial entry after page is updated
         self.page.update()
-        
+
         # Now load initial entry
         if self.file_manager:
             self._load_entry_for_date(self.current_entry_date)
@@ -353,8 +399,14 @@ class JournalVaultApp:
         new_date = selected_date.date()
 
         # Cancel any running AI process when switching entries
-        if hasattr(self, '_ai_process') and self._ai_process and self._ai_process.is_alive():
-            self._ai_process.cancel()
+        if (
+            hasattr(self, "_ai_thread")
+            and self._ai_thread
+            and self._ai_thread.is_alive()
+        ):
+            # Note: We can't easily cancel a thread, so we just note it
+            # The thread will complete and be replaced by any new AI requests
+            pass
             # Note: Don't hide AI reflection here - let it persist if it exists
 
         # Save current entry before switching
@@ -391,10 +443,16 @@ class JournalVaultApp:
         """Handle file selection from file explorer."""
         if entry_date and entry:
             # Cancel any running AI process when switching entries
-            if hasattr(self, '_ai_process') and self._ai_process and self._ai_process.is_alive():
-                self._ai_process.cancel()
+            if (
+                hasattr(self, "_ai_thread")
+                and self._ai_thread
+                and self._ai_thread.is_alive()
+            ):
+                # Note: We can't easily cancel a thread, so we just note it
+                # The thread will complete and be replaced by any new AI requests
+                pass
                 # Note: Don't hide AI reflection here - let it persist if it exists
-            
+
             # Update calendar and load entry
             self.selected_date = datetime.combine(entry_date, datetime.min.time())
             self.current_entry_date = entry_date
@@ -483,32 +541,32 @@ class JournalVaultApp:
         """Handle AI generation request from toolbar button."""
         if not content.strip():
             return
-        
+
         # Show generating state
         self.ai_reflection_component.show_generating_state()
-        
-        # TODO: Call AI service
-        # For now, simulate AI response
-        self._simulate_ai_response(content)
+
+        # Generate AI reflection
+        self._generate_ai_reflection(content)
 
     def _on_ai_regenerate(self) -> None:
         """Handle AI regeneration request."""
         content = self.text_editor.get_content()
         if content.strip():
-            self._on_ai_generate(content)
+            # Force regeneration by clearing cache
+            self._generate_ai_reflection(content, force_regenerate=True)
 
     def _on_ai_hide(self) -> None:
         """Handle AI hide request."""
         self.ai_reflection_component.hide()
-        
+
         # Clear AI reflection data from the entry
         self._clear_ai_reflection_from_entry()
-    
+
     def _clear_ai_reflection_from_entry(self) -> None:
         """Clear AI reflection data from the current journal entry."""
         if not self.file_manager:
             return
-        
+
         try:
             # Load current entry
             entry = self.file_manager.load_entry(self.current_entry_date)
@@ -516,55 +574,185 @@ class JournalVaultApp:
                 # Clear AI reflection data
                 entry.ai_reflection = None
                 entry.modified_at = datetime.now()
-                
+
                 # Save the entry without AI reflection data
                 self.file_manager.save_entry(entry)
                 print(f"Cleared AI reflection for entry: {self.current_entry_date}")
         except Exception as e:
             print(f"Error clearing AI reflection: {e}")
 
-    def _simulate_ai_response(self, content: str) -> None:
-        """Simulate AI response for testing."""
+    def _generate_ai_reflection(
+        self, content: str, force_regenerate: bool = False
+    ) -> None:
+        """Generate AI reflection for journal content."""
         import threading
-        import time
-        
-        def generate_response():
-            time.sleep(2)  # Simulate processing time
-            
-            # Simulated AI response
+        import asyncio
+
+        def run_ai_generation():
+            """Run AI generation in a separate thread with its own event loop."""
+            # Create a new event loop for this thread
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            try:
+                # Run the async generation
+                loop.run_until_complete(
+                    self._generate_reflection_async(content, force_regenerate)
+                )
+            finally:
+                loop.close()
+
+        # Cancel any existing AI task
+        if (
+            hasattr(self, "_ai_thread")
+            and self._ai_thread
+            and self._ai_thread.is_alive()
+        ):
+            # Note: We can't easily cancel a thread, so we'll just start a new one
+            pass
+
+        # Start new AI generation in a separate thread
+        self._ai_thread = threading.Thread(target=run_ai_generation, daemon=True)
+        self._ai_thread.start()
+
+    async def _generate_reflection_async(
+        self, content: str, force_regenerate: bool = False
+    ) -> None:
+        """Async method to generate AI reflection."""
+        try:
+            # Check if AI service is available
+            if not self.ai_service or not self.ai_service.is_available:
+                # Show fallback message
+                fallback_data = {
+                    "insights": [
+                        "AI reflection is not currently available. Please ensure the AI model is downloaded."
+                    ],
+                    "questions": [
+                        "What insights can you draw from this entry on your own?"
+                    ],
+                    "themes": ["reflection"],
+                    "generated_at": datetime.now().isoformat(),
+                }
+                self.ai_reflection_component.show_reflection(fallback_data)
+                return
+
+            # Progress callback to update UI
+            def update_progress(message: str):
+                # Update the generating state with progress message
+                if hasattr(self.ai_reflection_component, "update_generating_status"):
+                    self.ai_reflection_component.update_generating_status(message)
+
+            # Generate reflection using AI service
+            entry_date_str = self.current_entry_date.isoformat()
+            result = await self.ai_service.generate_reflection(
+                content=content,
+                entry_date=entry_date_str,
+                progress_callback=update_progress,
+                force_regenerate=force_regenerate,
+            )
+
+            # Convert ReflectionResult to dict format expected by UI
             reflection_data = {
-                "insights": [
-                    "You seem to be processing a challenging situation",
-                    "There's a pattern of self-reflection in your writing"
-                ],
-                "questions": [
-                    "What would help you feel more confident in this situation?",
-                    "How might you approach this differently next time?",
-                    "What support do you need right now?"
-                ],
-                "themes": ["challenge", "self_improvement", "support"],
-                "generated_at": "2025-08-08T15:30:00Z"
+                "insights": result.insights,
+                "questions": result.questions,
+                "themes": result.themes,
+                "generated_at": result.generated_at,
+                "model_used": result.model_used,
+                "generation_time": result.generation_time,
+                "cached": result.cached,
             }
-            
+
             # Show the reflection
             self.ai_reflection_component.show_reflection(reflection_data)
-            
+
             # Save AI reflection data to the journal entry
             self._save_ai_reflection_to_entry(reflection_data)
-        
-        # Cancel any existing AI process
-        if hasattr(self, '_ai_process') and self._ai_process and self._ai_process.is_alive():
-            self._ai_process.cancel()
-        
-        # Start new AI process
-        self._ai_process = threading.Timer(2.0, generate_response)
-        self._ai_process.start()
+
+            # Log result and update statistics
+            status = "cached" if result.cached else "generated"
+            print(
+                f"AI reflection {status} in {result.generation_time:.2f}s for entry: {self.current_entry_date}"
+            )
+
+            # Update success statistics
+            if result.error is None:
+                app_config.update_ai_service_status(
+                    {
+                        "successful_generations": app_config.get_ai_service_status().get(
+                            "successful_generations", 0
+                        )
+                        + 1
+                    }
+                )
+            else:
+                app_config.update_ai_service_status(
+                    {
+                        "failed_generations": app_config.get_ai_service_status().get(
+                            "failed_generations", 0
+                        )
+                        + 1
+                    }
+                )
+
+        except Exception as e:
+            error_msg = f"Error generating AI reflection: {e}"
+            print(error_msg)
+
+            # Update failure statistics
+            app_config.update_ai_service_status(
+                {
+                    "failed_generations": app_config.get_ai_service_status().get(
+                        "failed_generations", 0
+                    )
+                    + 1,
+                    "last_model_load_error": error_msg,
+                }
+            )
+
+            # Show user-friendly error based on error type
+            if "memory" in str(e).lower() or "insufficient" in str(e).lower():
+                error_data = {
+                    "insights": [
+                        "Not enough memory available for AI analysis.",
+                        "Try closing other applications and regenerating.",
+                    ],
+                    "questions": [
+                        "What insights can you draw from this entry yourself?"
+                    ],
+                    "themes": ["reflection"],
+                    "generated_at": datetime.now().isoformat(),
+                    "error": "Memory insufficient",
+                }
+            elif "model" in str(e).lower() or "not found" in str(e).lower():
+                error_data = {
+                    "insights": [
+                        "AI model not available.",
+                        "Please ensure the AI model is downloaded in settings.",
+                    ],
+                    "questions": ["What themes do you notice in your writing?"],
+                    "themes": ["reflection"],
+                    "generated_at": datetime.now().isoformat(),
+                    "error": "Model not available",
+                }
+            else:
+                error_data = {
+                    "insights": [
+                        "AI analysis temporarily unavailable.",
+                        "Your thoughts and reflections are still valuable.",
+                    ],
+                    "questions": ["What stands out to you most in this entry?"],
+                    "themes": ["reflection"],
+                    "generated_at": datetime.now().isoformat(),
+                    "error": "Service temporarily unavailable",
+                }
+
+            self.ai_reflection_component.show_reflection(error_data)
 
     def _save_ai_reflection_to_entry(self, reflection_data: Dict[str, Any]) -> None:
         """Save AI reflection data to the current journal entry."""
         if not self.file_manager:
             return
-        
+
         try:
             # Load current entry
             entry = self.file_manager.load_entry(self.current_entry_date)
@@ -572,15 +760,17 @@ class JournalVaultApp:
                 # Update AI reflection data
                 entry.ai_reflection = reflection_data
                 entry.modified_at = datetime.now()
-                
+
                 # Save the entry with AI reflection data
                 self.file_manager.save_entry(entry)
                 print(f"Saved AI reflection for entry: {self.current_entry_date}")
             else:
-                print(f"Could not save AI reflection - no entry found for {self.current_entry_date}")
+                print(
+                    f"Could not save AI reflection - no entry found for {self.current_entry_date}"
+                )
         except Exception as e:
             print(f"Error saving AI reflection: {e}")
-    
+
     def _load_entry_for_date(self, entry_date) -> None:
         """Load entry content for a specific date."""
         if not self.file_manager:
@@ -595,9 +785,13 @@ class JournalVaultApp:
             if entry:
                 self.current_entry_content = entry.content
                 self.current_entry_exists = True
-                if self.text_editor and hasattr(self.text_editor, 'text_field') and self.text_editor.text_field:
+                if (
+                    self.text_editor
+                    and hasattr(self.text_editor, "text_field")
+                    and self.text_editor.text_field
+                ):
                     self.text_editor.set_content(entry.content)
-                
+
                 # Show AI reflection if it exists for this entry
                 if entry.ai_reflection and self.ai_reflection_component:
                     self.ai_reflection_component.show_reflection(entry.ai_reflection)
@@ -605,13 +799,21 @@ class JournalVaultApp:
             else:
                 self.current_entry_content = ""
                 self.current_entry_exists = False
-                if self.text_editor and hasattr(self.text_editor, 'text_field') and self.text_editor.text_field:
+                if (
+                    self.text_editor
+                    and hasattr(self.text_editor, "text_field")
+                    and self.text_editor.text_field
+                ):
                     self.text_editor.clear()
         except Exception as e:
             print(f"Error loading entry for {entry_date}: {e}")
             self.current_entry_content = ""
             self.current_entry_exists = False
-            if self.text_editor and hasattr(self.text_editor, 'text_field') and self.text_editor.text_field:
+            if (
+                self.text_editor
+                and hasattr(self.text_editor, "text_field")
+                and self.text_editor.text_field
+            ):
                 self.text_editor.clear()
 
         # Update delete button visibility

@@ -52,15 +52,18 @@ src/journal_vault/
 ├── ui/
 │   ├── theme.py         # Dark theme system with ThemedContainer/ThemedText components
 │   └── components/      # Reusable UI components
-│       ├── onboarding.py    # 3-step onboarding flow with native folder picker
-│       ├── calendar.py      # Interactive calendar with entry indicators
-│       ├── text_editor.py   # Enhanced markdown text editor
-│       └── file_explorer.py # File navigation component
+│       ├── onboarding.py      # 4-step onboarding flow with AI setup
+│       ├── calendar.py        # Interactive calendar with entry indicators
+│       ├── text_editor.py     # Enhanced markdown text editor
+│       ├── file_explorer.py   # File navigation component
+│       └── ai_reflection.py   # AI reflection display component
 ├── storage/
-│   ├── file_manager.py      # File I/O operations for journal entries
-│   ├── auto_save.py         # Auto-save functionality
-│   └── integration.py       # Storage integration layer
-└── ai/                      # AI integration modules (planned)
+│   ├── file_manager.py        # Complete file I/O with SQLite indexing
+│   ├── auto_save.py           # Auto-save functionality
+│   └── integration.py         # Storage integration layer
+└── ai/
+    ├── __init__.py            # AI module initialization
+    └── download_model.py      # AI model download manager
 ```
 
 ### Key Components
@@ -69,7 +72,7 @@ src/journal_vault/
 
 **Theme System (ui/theme.py)**: Dark-mode only theme with consistent color palette. Provides `ThemedContainer`, `ThemedText`, and `ThemedCard` components for consistent styling.
 
-**Onboarding Flow (ui/components/onboarding.py)**: Enhanced 3-step process:
+**Onboarding Flow (ui/components/onboarding.py)**: Enhanced 4-step process:
 1. Welcome and feature overview
 2. Privacy explanation 
 3. **Dual-mode vault setup** with radio button selection:
@@ -77,10 +80,17 @@ src/journal_vault/
    - Load Existing Vault: Smart detection of existing vault structures
    - Real-time path preview and validation
    - Context-aware completion buttons
+4. **AI Setup**: Optional Qwen2.5-3B-Instruct model download with progress tracking
 
 **Calendar Component (ui/components/calendar.py)**: Interactive month navigation with entry indicators, date selection, and "Today" button. Integrates with journal entry system.
 
-**Configuration (config/app_config.py)**: Persistent settings stored in `~/.journal_vault/config.json` including onboarding status, storage path, and window state.
+**AI Reflection Component (ui/components/ai_reflection.py)**: Inline component for displaying AI-generated insights, questions, and themes with manual trigger support and persistent display.
+
+**File Manager (storage/file_manager.py)**: Complete file management system with SQLite indexing, YAML frontmatter parsing, entry CRUD operations, search capabilities, and vault validation.
+
+**AI Download Manager (ai/download_model.py)**: Handles downloading and managing the Qwen2.5-3B-Instruct model with progress tracking, system requirements checking, and file validation.
+
+**Configuration (config/app_config.py)**: Persistent settings stored in `~/.journal_vault/config.json` including onboarding status, storage path, window state, and AI configuration.
 
 ### Data Storage Format
 
@@ -100,9 +110,10 @@ User's Journal Directory/
 
 The application follows an Obsidian-inspired design:
 - **Left Sidebar**: Calendar component and file explorer
-- **Main Content Area**: Journal text editor
-- **Bottom Panel**: AI reflection area (planned)
+- **Main Content Area**: Journal text editor with entry management
+- **Inline AI Section**: AI reflection component displayed below text editor
 - **Color Scheme**: Dark mode with violet/indigo accents (#8B5CF6 primary)
+- **Interactive Elements**: Delete confirmation dialogs, progress indicators, file pickers
 
 ## Development Status
 
@@ -110,31 +121,47 @@ The application follows an Obsidian-inspired design:
 - Complete Flet-based application structure
 - Dark theme system with reusable components  
 - Interactive calendar with navigation and entry indicators
-- **Enhanced 3-step onboarding** with dual-mode vault setup
+- **Enhanced 4-step onboarding** with dual-mode vault setup and AI configuration
 - **Smart vault detection** for existing journal folders
 - **Real-time path preview** with proper macOS folder selection
 - Configuration persistence system with vault metadata
+- **Complete file manager with SQLite indexing** for fast entry lookup
+- **AI reflection component** with inline display and manual triggers
+- **AI model download manager** with progress tracking and validation
+- **Enhanced markdown text editor** with formatting toolbar
+- **Auto-save functionality** with configurable delay
+- **Complete CRUD operations** for journal entries
+- **Entry search and filtering** capabilities
+- **Vault validation and integrity checking**
+- **Delete confirmation UI** with platform-appropriate dialogs
 - Comprehensive error handling and user feedback
 
 ### In Progress 🔄
-- File manager and storage system (`storage/` modules)
-- Enhanced markdown editor with formatting
-- Auto-save functionality
-- Real entry loading/saving
+- **AI inference integration** - Model downloading implemented, inference pipeline pending
+- **Cross-platform packaging** for distribution
+- **Advanced search features** with full-text indexing
+- **Data export/import** functionality
 
 ### Planned ❌
-- AI integration with Qwen2.5-3B-Instruct model
-- Reflection generation and caching
-- SQLite indexing for fast entry lookup
-- Cross-platform packaging
+- **Advanced AI features**: Theme detection, mood tracking, writing suggestions
+- **Plugin system** for extensibility
+- **Sync capabilities** for backup and sharing
+- **Rich text editor** with WYSIWYG features
+- **Data visualization** of writing patterns and trends
+- **Mobile companion app** integration
 
 ## Important Implementation Details
 
 ### Dependencies
-Uses minimal, focused dependencies managed by `uv`:
-- `flet>=0.24.1` - Cross-platform UI framework
+Uses focused dependencies managed by `uv` (requires Python 3.11+):
+- `flet[all]==0.28.3` - Cross-platform UI framework
 - `pydantic>=2.8.0` - Data validation and settings
 - `python-dateutil>=2.9.0` - Date handling utilities
+- `pyyaml>=6.0.2` - YAML parsing for frontmatter
+- `llama-cpp-python>=0.2.90` - Local AI model inference
+- `huggingface-hub>=0.25.0` - AI model downloads
+- `psutil>=5.9.0` - System resource monitoring
+- `requests>=2.31.0` - HTTP requests for model downloading
 
 ### Configuration Management
 Settings are automatically persisted to `~/.journal_vault/config.json`. Key settings include:
