@@ -6,10 +6,10 @@ and allows date selection for viewing/creating entries.
 """
 
 import calendar
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Set, Callable, Optional
 import flet as ft
-from ..theme import ThemeManager, ThemedContainer, ThemedText, SPACING, COMPONENT_SIZES
+from ..theme import ThemeManager, ThemedContainer, ThemedText, SPACING
 
 
 class CalendarComponent:

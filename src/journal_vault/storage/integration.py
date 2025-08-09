@@ -6,10 +6,8 @@ with the main application, handling coordination between file operations,
 auto-save, and UI updates.
 """
 
-from datetime import datetime, date
+from datetime import date
 from typing import Optional, Callable, Dict, Any, Set
-import asyncio
-from pathlib import Path
 
 from .file_manager import FileManager, JournalEntry
 from .auto_save import AutoSaveManager, AutoSaveConfig, AutoSaveStatus

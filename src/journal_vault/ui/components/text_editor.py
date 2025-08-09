@@ -10,7 +10,7 @@ import threading
 from typing import Callable, Optional
 import flet as ft
 from ..theme import (
-    ThemeManager, ThemedText, ThemedCard,
+    ThemeManager, ThemedCard,
     SPACING, COMPONENT_SIZES, TYPO_SCALE
 )
 
@@ -366,7 +366,6 @@ class EnhancedTextEditor:
             return
         
         # Use a simple timer-based approach
-        import threading
         if hasattr(self, '_save_timer') and self._save_timer and self._save_timer.is_alive():
             self._save_timer.cancel()
         
@@ -408,7 +407,7 @@ class EnhancedTextEditor:
             try:
                 icon_control.update()
                 save_container.update()
-            except:
+            except Exception:
                 pass  # Ignore update errors
     
     def _apply_bold(self) -> None:

@@ -5,7 +5,6 @@ Handles creation, reading, updating, and deletion of markdown journal files
 with YAML frontmatter. Manages the directory structure and file organization.
 """
 
-import os
 import sqlite3
 import hashlib
 from datetime import datetime, date
@@ -13,7 +12,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, Set
 import yaml
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 
 
 @dataclass

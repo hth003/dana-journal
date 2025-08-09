@@ -563,7 +563,7 @@ Local AI-powered reflection system using Qwen2.5-3B-Instruct for generating insi
 ```
 
 #### AI Button States
-- **Disabled**: When entry has insufficient content (< 50 words)
+- **Disabled**: When entry has insufficient content (< 50 words) or when user didn't choose AI functionality when onboarding
 - **Enabled**: When entry has meaningful content
 - **Generating**: During AI processing with loading indicator
 - **Generated**: Shows reflection with regenerate option
@@ -572,8 +572,8 @@ Local AI-powered reflection system using Qwen2.5-3B-Instruct for generating insi
 ```python
 {
     "insights": [
-        "You seem to be processing a challenging work situation",
-        "There's a pattern of self-reflection in your entries"
+        "You seem to be processing a challenging work situation. This situation wasn’t about you was not about  lacking skill - it was about institutional risk aversion. When institutions step back from candid appraisal, they often choose the path of least resistance: exclude dissenters quietly rather than address misalignment or structural failures."
+        
     ],
     "questions": [
         "What would help you feel more confident in this situation?",
@@ -644,7 +644,7 @@ uv run python tests/reset_onboarding.py
 
 ## Current Status Summary
 
-**Overall Completion: 85%** - The AI Journal Vault has evolved into a sophisticated, production-ready journaling application with comprehensive features and excellent user experience.
+**Overall Completion: 90%** - The AI Journal Vault has evolved into a sophisticated, production-ready journaling application with comprehensive features, excellent user experience, and complete AI infrastructure ready for final inference integration.
 
 ### What Works Now ✅
 - **Complete Journaling Workflow**: Create, edit, save, and organize entries with full persistence
@@ -656,11 +656,14 @@ uv run python tests/reset_onboarding.py
 - **Robust Storage System**: YAML frontmatter with SQLite indexing for performance
 - **Configuration Management**: Persistent settings, window state, and vault preferences
 
-### Framework Ready for AI Integration 🔄
-- **UI Components**: AI reflection panel implemented and ready for content
-- **Data Models**: AI reflection fields prepared in storage system
-- **Caching Infrastructure**: AI cache directory and storage prepared
-- **Integration Points**: Callback system ready for AI-generated content
+### AI Integration Nearly Complete (90% Done) 🔄
+- **UI Components**: AI reflection panel implemented and ready for content ✅ COMPLETE
+- **Model Download System**: Complete ModelDownloadManager with HuggingFace integration ✅ COMPLETE
+- **Enhanced Onboarding**: 4-step flow with AI setup and model download ✅ COMPLETE
+- **Data Models**: AI reflection fields prepared in storage system ✅ COMPLETE
+- **Caching Infrastructure**: AI cache directory and storage prepared ✅ COMPLETE
+- **Integration Points**: Callback system ready for AI-generated content ✅ COMPLETE
+- **Configuration Management**: AI preferences and model path management ✅ COMPLETE
 
 ### Remaining Work ❌
 1. **AI Model Integration**: Bundle and integrate Qwen2.5-3B-Instruct

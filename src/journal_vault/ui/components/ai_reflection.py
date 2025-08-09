@@ -136,8 +136,6 @@ class AIReflectionComponent:
     
     def _update_content(self, reflection_data: Dict[str, Any]) -> None:
         """Update the reflection content display."""
-        colors = self.theme_manager.colors
-        
         controls = []
         
         # Insights section

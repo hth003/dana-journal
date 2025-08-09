@@ -10,7 +10,6 @@ from typing import Callable, Optional
 from pathlib import Path
 import flet as ft
 from ..theme import ThemeManager, ThemedContainer, ThemedText, SPACING
-from ...storage.file_manager import FileManager
 from ...ai.download_model import ModelDownloadManager, DownloadProgress, format_bytes, format_speed, format_eta
 
 
