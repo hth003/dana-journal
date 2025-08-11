@@ -1089,12 +1089,22 @@ class OnboardingFlow:
                                 ft.Radio(
                                     value="create",
                                     label="Create New Vault",
-                                    active_color=colors.primary
+                                    active_color=colors.primary,
+                                    label_style=ft.TextStyle(
+                                        color=colors.text_primary,
+                                        size=14,
+                                        weight=ft.FontWeight.W_500
+                                    )
                                 ),
                                 ft.Radio(
                                     value="load",
                                     label="Load Existing Vault",
-                                    active_color=colors.accent
+                                    active_color=colors.accent,
+                                    label_style=ft.TextStyle(
+                                        color=colors.text_primary,
+                                        size=14,
+                                        weight=ft.FontWeight.W_500
+                                    )
                                 )
                             ],
                             alignment=ft.MainAxisAlignment.CENTER,
@@ -1552,7 +1562,7 @@ class OnboardingFlow:
                 pass
             self._show_storage_error(f"Could not open folder picker: {str(ex)}. Try using 'Use Documents' instead.")
     
-    def _use_documents_folder(self, e) -> None:
+    def _use_documents_folder(self, _) -> None:
         """Use the Documents folder as parent directory."""
         try:
             documents_path = os.path.expanduser("~/Documents")
@@ -1753,7 +1763,7 @@ class OnboardingFlow:
         except Exception as ex:
             self._show_storage_error(f"Error selecting directory: {str(ex)}")
     
-    def _use_default_location(self, e) -> None:
+    def _use_default_location(self, _) -> None:
         """Use the default storage location."""
         try:
             default_path = os.path.expanduser("~/Documents/Journal Vault")
@@ -1799,7 +1809,7 @@ class OnboardingFlow:
     # Removed unused dialog method
     
     
-    def _go_back(self, e) -> None:
+    def _go_back(self, _) -> None:
         """Go to previous step."""
         if self.current_step > 0:
             self.current_step -= 1
@@ -1824,7 +1834,7 @@ class OnboardingFlow:
             # This should not happen as final step should call _complete_onboarding
             self._complete_onboarding(e)
     
-    def _complete_onboarding(self, e) -> None:
+    def _complete_onboarding(self, _) -> None:
         """Complete the onboarding process based on selected mode."""
         try:
             # Update AI settings in onboarding data
@@ -1883,14 +1893,14 @@ class OnboardingFlow:
     def _show_existing_vault_dialog(self, vault_path: str) -> None:
         """Show dialog when existing vault is detected."""
         try:
-            def open_existing_vault(e):
+            def open_existing_vault(_):
                 dialog.open = False
                 if self.page:
                     self.page.update()
                 # Use existing vault
                 self.on_complete(self.onboarding_data)
             
-            def choose_different_location(e):
+            def choose_different_location(_):
                 dialog.open = False
                 if self.page:
                     self.page.update()
@@ -1904,7 +1914,7 @@ class OnboardingFlow:
                 self.container.content.controls[2] = self._get_current_step_content()
                 self.container.update()
             
-            def close_dialog(e):
+            def close_dialog(_):
                 dialog.open = False
                 if self.page:
                     self.page.update()
@@ -1956,7 +1966,7 @@ class OnboardingFlow:
     def _show_folder_exists_error(self) -> None:
         """Show error dialog when selected folder already exists."""
         try:
-            def close_dialog(e):
+            def close_dialog(_):
                 dialog.open = False
                 if self.page:
                     self.page.update()
@@ -2137,7 +2147,7 @@ class OnboardingFlow:
         """Show storage-related error message to user."""
         try:
             # Create error dialog
-            def close_dialog(e):
+            def close_dialog(_):
                 error_dialog.open = False
                 e.page.update()
             
@@ -2212,7 +2222,7 @@ class OnboardingFlow:
             except Exception:
                 pass  # Ignore UI update errors
     
-    def _continue_without_ai(self, e) -> None:
+    def _continue_without_ai(self, _) -> None:
         """Handle continuing without AI features."""
         # Mark AI as skipped
         self.onboarding_data['ai_enabled'] = False
@@ -2232,7 +2242,7 @@ class OnboardingFlow:
             # Proceed to next step
             self._go_next(e)
         
-        def go_back(e):
+        def go_back(_):
             dialog.open = False
             if self.page:
                 self.page.update()
