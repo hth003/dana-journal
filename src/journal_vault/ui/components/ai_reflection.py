@@ -23,6 +23,7 @@ class DanaWisdomComponent:
         self.on_regenerate = on_regenerate
         self.on_hide = on_hide
         self.is_visible = False
+        self.is_expanded = False  # Track expansion state
         self.current_reflection = None
         self._is_regenerating = False
         
@@ -30,7 +31,7 @@ class DanaWisdomComponent:
         self.container = None
         self.content_area = None
         self.regenerate_button = None
-        self.hide_button = None
+        self.expand_button = None  # Show/hide button
         self._regenerate_progress_ring = None
         
         self._build_component()
@@ -39,10 +40,11 @@ class DanaWisdomComponent:
         """Build the AI reflection component."""
         colors = self.theme_manager.colors
         
-        # Content area for reflection display
+        # Content area for reflection display - scrollable
         self.content_area = ft.Column(
             controls=[],
-            spacing=SPACING["sm"],
+            spacing=SPACING["xs"],  # Reduced spacing for compactness
+            scroll=ft.ScrollMode.AUTO,  # Make content scrollable
             expand=True
         )
         
@@ -72,60 +74,75 @@ class DanaWisdomComponent:
             spacing=8
         )
         
-        self.hide_button = ft.TextButton(
-            "Hide",  # User preferred text
-            icon=ft.Icons.VISIBILITY_OFF,  # More appropriate hide icon
-            on_click=lambda _: self._on_hide()
+        # Hide button removed - using expand_button for show/hide functionality instead
+        
+        # Show/hide wisdom button (more intuitive than expand/collapse)
+        self.expand_button = ft.IconButton(
+            icon=ft.Icons.VISIBILITY,  # Eye icon for show/hide
+            icon_size=TYPO_SCALE["body_sm"],
+            icon_color=colors.text_muted,
+            tooltip="Show wisdom",
+            on_click=lambda _: self._toggle_expand(),
+            style=ft.ButtonStyle(
+                shape=ft.RoundedRectangleBorder(radius=4),
+                overlay_color=colors.hover,
+            ),
         )
         
-        # Main container - optimized for minimal space usage
+        # Main container - collapsible wisdom card
         self.container = ft.Container(
             content=ft.Column(
                 controls=[
-                    # Compact header
+                    # Collapsible header with expand/collapse button
                     ft.Row(
                         controls=[
                             ft.Icon(
                                 ft.Icons.NATURE_PEOPLE,  # More organic, companion-like icon
                                 color=colors.accent,  # Sage green accent instead of primary
-                                size=TYPO_SCALE["body"]  # Smaller icon to save space
+                                size=TYPO_SCALE["body_sm"]  # Even smaller icon
                             ),
                             ThemedText(
                                 self.theme_manager,
                                 "Dana's Wisdom",  # Warm, companion-like name
                                 variant="primary",
-                                typography="body_sm"  # Smaller header text
+                                typography="body_sm"  # Small header text
                             ),
                             ft.Container(expand=True),
                             self._regenerate_button_container,
-                            self.hide_button
+                            self.expand_button  # Show/hide button (removed duplicate hide button)
                         ],
                         alignment=ft.MainAxisAlignment.START,
                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
                         spacing=SPACING["xs"]  # Tighter spacing
                     ),
                     
-                    # Compact wisdom card with special styling
+                    # Collapsible content area - simple approach like text editor
                     ft.Container(
-                        content=self.content_area,
-                        bgcolor=colors.wisdom_card_bg,  # Pure white for wisdom cards
-                        border_radius=RADIUS["md"],  # Smaller radius for compactness
-                        padding=ft.padding.all(SPACING["md"]),  # Reduced padding
-                        shadow=ft.BoxShadow(
-                            spread_radius=0,
-                            blur_radius=4,  # Lighter shadow for less visual weight
-                            color=colors.shadow_wisdom,  # Special warm shadow
-                            offset=ft.Offset(0, 2)  # Smaller offset for subtlety
+                        content=ft.Container(
+                            content=self.content_area,
+                            bgcolor=colors.wisdom_card_bg,  # Pure white for wisdom cards
+                            border_radius=RADIUS["sm"],  # Smaller radius for compactness
+                            padding=ft.padding.all(SPACING["sm"]),  # Further reduced padding
+                            shadow=ft.BoxShadow(
+                                spread_radius=0,
+                                blur_radius=2,  # Minimal shadow for less visual weight
+                                color=colors.shadow_wisdom,  # Special warm shadow
+                                offset=ft.Offset(0, 1)  # Minimal offset
+                            ),
+                            border=ft.border.all(1, colors.accent + "15"),  # Very subtle sage green border
                         ),
-                        border=ft.border.all(1, colors.accent + "20")  # Subtle sage green border
+                        # Height will be controlled by expansion state
+                        height=0 if not self.is_expanded else 250,  # Fixed height when shown
+                        animate=ft.Animation(300, ft.AnimationCurve.EASE_IN_OUT),  # Smooth animation
+                        clip_behavior=ft.ClipBehavior.ANTI_ALIAS,  # Smooth clipping
                     )
                 ],
-                spacing=SPACING["xs"],  # Tighter spacing between header and content
+                spacing=SPACING["xs"],  # Minimal spacing between header and content
                 tight=True  # Minimize vertical space
             ),
             padding=ft.padding.symmetric(
-                horizontal=SPACING["md"],
-                vertical=SPACING["sm"]  # Reduced vertical padding
+                horizontal=SPACING["sm"],  # Reduced horizontal padding
+                vertical=SPACING["xs"]  # Minimal vertical padding
             ),
             visible=False  # Hidden by default
         )
@@ -135,7 +152,24 @@ class DanaWisdomComponent:
         self.current_reflection = reflection_data
         self._update_content(reflection_data)
         self.container.visible = True
-        self.container.update()
+        
+        # Auto-expand when showing new reflection content
+        if not self.is_expanded:
+            self._toggle_expand()
+        else:
+            self.container.update()
+    
+    def show_available_indicator(self) -> None:
+        """Show a minimal indicator that AI reflection is available."""
+        if self.current_reflection:
+            self.container.visible = True
+            # Keep collapsed - just show the header
+            self.container.update()
+    
+    def set_wisdom_container_visibility(self, visible: bool) -> None:
+        """Set the visibility of the wisdom container in the main layout."""
+        # This will be called from the main app to control the container visibility
+        pass  # Placeholder - will be implemented in main.py
     
     def show_generating_state(self) -> None:
         """Show loading/generating state."""
@@ -159,11 +193,16 @@ class DanaWisdomComponent:
             )
         ]
         self.container.visible = True
-        self.container.update()
+        # Auto-expand when generating
+        if not self.is_expanded:
+            self._toggle_expand()
+        else:
+            self.container.update()
     
     def hide(self) -> None:
         """Hide the AI reflection component."""
         self.container.visible = False
+        self.current_reflection = None  # Clear the reflection data
         self.container.update()
     
     def _update_content(self, reflection_data: Dict[str, Any]) -> None:
@@ -191,14 +230,14 @@ class DanaWisdomComponent:
                             variant="secondary",
                             typography="body_sm"
                         ),
-                        padding=ft.padding.only(left=SPACING["md"])
+                        padding=ft.padding.only(left=SPACING["sm"])  # Reduced left padding
                     )
                 )
         
         # Questions section
         if "questions" in reflection_data and reflection_data["questions"]:
             if controls:  # Add spacing if insights exist
-                controls.append(ft.Container(height=SPACING["md"]))
+                controls.append(ft.Container(height=SPACING["sm"]))  # Reduced spacing
             
             controls.append(
                 ThemedText(
@@ -219,14 +258,14 @@ class DanaWisdomComponent:
                             variant="secondary",
                             typography="body_sm"
                         ),
-                        padding=ft.padding.only(left=SPACING["md"])
+                        padding=ft.padding.only(left=SPACING["sm"])  # Reduced left padding
                     )
                 )
         
         # Themes section (optional)
         if "themes" in reflection_data and reflection_data["themes"]:
             if controls:  # Add spacing if other sections exist
-                controls.append(ft.Container(height=SPACING["md"]))
+                controls.append(ft.Container(height=SPACING["sm"]))  # Reduced spacing
             
             controls.append(
                 ThemedText(
@@ -246,7 +285,7 @@ class DanaWisdomComponent:
                         variant="muted",
                         typography="caption"
                     ),
-                    padding=ft.padding.only(left=SPACING["md"])
+                    padding=ft.padding.only(left=SPACING["sm"])  # Reduced left padding
                 )
             )
         
@@ -321,6 +360,28 @@ class DanaWisdomComponent:
         """Handle hide button click."""
         if self.on_hide:
             self.on_hide()
+    
+    def _toggle_expand(self) -> None:
+        """Toggle the visibility of the wisdom card content."""
+        self.is_expanded = not self.is_expanded
+        
+        # Update the button icon and tooltip
+        if self.is_expanded:
+            self.expand_button.icon = ft.Icons.VISIBILITY_OFF
+            self.expand_button.tooltip = "Hide wisdom"
+        else:
+            self.expand_button.icon = ft.Icons.VISIBILITY
+            self.expand_button.tooltip = "Show wisdom"
+        
+        # Update the content area height
+        content_container = self.container.content.controls[1]  # The collapsible content area
+        if self.is_expanded:
+            content_container.height = 250  # Fixed height when shown
+        else:
+            content_container.height = 0  # Hide content
+        
+        # Update the UI
+        self.container.update()
     
     def get_container(self) -> ft.Control:
         """Get the component container."""

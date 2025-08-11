@@ -221,26 +221,26 @@ class JournalVaultApp:
         """Create the main three-panel layout with Obsidian-like design."""
         colors = self.theme_manager.colors
 
-        # Header with consistent spacing and typography
+        # Minimal header with reduced visual weight
         header = ThemedContainer(
             self.theme_manager,
             variant="surface",
-            elevation="sm",
+            elevation="none",
             content=ft.Row(
                 controls=[
                     ThemedText(
                         self.theme_manager,
                         "Dana - safe journal space",
                         variant="primary",
-                        typography="h3",
+                        typography="h4",  # Reduced from h3 to h4
                     ),
                     ft.Container(),  # Empty container for spacing
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
             ),
-            spacing="lg",
-            border=ft.border.only(bottom=ft.border.BorderSide(1, colors.border_subtle)),
+            spacing="md",  # Reduced from lg to md
+            # Removed bottom border for cleaner look
         )
 
         # Initialize file manager if not already done
@@ -348,27 +348,33 @@ class JournalVaultApp:
             on_hide=self._on_ai_hide,
         )
 
-        # Create scrollable container for text editor to maintain writing focus
+        # Create scrollable container for text editor
         text_editor_scroll = ft.Container(
             content=self.text_editor.get_container(),
-            expand=True,  # Text editor gets priority for space
+            # Expand is handled by the flex container above
         )
         
-        # Create wisdom card container with controlled sizing
-        wisdom_container = ft.Container(
+        # Create collapsible wisdom card container
+        self.wisdom_container = ft.Container(
             content=self.ai_reflection_component.get_container(),
-            # Don't expand - let it size based on content
-            # This prevents it from competing with text editor for space
+            # No margin or border - cleaner look
+            # No fixed height - will be controlled by the component itself
+            # Wisdom card will be collapsible and use flex ratios
         )
         
+        # Journal entry section with conditional wisdom card
         journal_entry_section = ft.Container(
             content=ft.Column(
                 controls=[
                     entry_header,
                     ft.Container(height=SPACING["sm"]),
-                    text_editor_scroll,  # Text editor with priority expansion
-                    ft.Container(height=SPACING["xs"]),  # Small gap
-                    wisdom_container,  # Wisdom card without expansion
+                    # Text editor gets full space when wisdom card is hidden
+                    ft.Container(
+                        content=text_editor_scroll,
+                        expand=True,
+                    ),
+                    # Wisdom card container - will be conditionally shown
+                    self.wisdom_container,
                 ],
                 spacing=0,
                 expand=True,
@@ -492,10 +498,19 @@ class JournalVaultApp:
             self.current_entry_exists = True
             self._update_entry_delete_button()
 
-            # Show AI reflection if it exists for this entry
+            # Store AI reflection data and show minimal indicator
+            # Let user decide when to view AI insights
             if entry.ai_reflection and self.ai_reflection_component:
-                self.ai_reflection_component.show_reflection(entry.ai_reflection)
-                print(f"Loaded AI reflection for entry: {entry_date}")
+                # Store the reflection data
+                self.ai_reflection_component.current_reflection = entry.ai_reflection
+                self.ai_reflection_component._update_content(entry.ai_reflection)
+                # Show minimal indicator that AI reflection is available
+                self.ai_reflection_component.show_available_indicator()
+                # Show the wisdom container
+                if hasattr(self, 'wisdom_container'):
+                    self.wisdom_container.visible = True
+                    self.wisdom_container.update()
+                print(f"Loaded AI reflection data for entry: {entry_date} (showing indicator)")
 
             print(f"Selected entry for date: {entry_date.strftime('%Y-%m-%d')}")
 
@@ -552,6 +567,11 @@ class JournalVaultApp:
         if not content.strip():
             return
 
+        # Show the wisdom container
+        if hasattr(self, 'wisdom_container'):
+            self.wisdom_container.visible = True
+            self.wisdom_container.update()
+
         # Show generating state
         self.ai_reflection_component.show_generating_state()
 
@@ -573,6 +593,11 @@ class JournalVaultApp:
     def _on_ai_hide(self) -> None:
         """Handle AI hide request."""
         self.ai_reflection_component.hide()
+        
+        # Hide the wisdom container to give full space to text editor
+        if hasattr(self, 'wisdom_container'):
+            self.wisdom_container.visible = False
+            self.wisdom_container.update()
 
         # Clear AI reflection data from the entry
         self._clear_ai_reflection_from_entry()
@@ -781,10 +806,19 @@ class JournalVaultApp:
                 ):
                     self.text_editor.set_content(entry.content)
 
-                # Show AI reflection if it exists for this entry
+                # Store AI reflection data and show minimal indicator
+                # Let user decide when to view AI insights
                 if entry.ai_reflection and self.ai_reflection_component:
-                    self.ai_reflection_component.show_reflection(entry.ai_reflection)
-                    print(f"Loaded AI reflection for entry: {entry_date}")
+                    # Store the reflection data
+                    self.ai_reflection_component.current_reflection = entry.ai_reflection
+                    self.ai_reflection_component._update_content(entry.ai_reflection)
+                    # Show minimal indicator that AI reflection is available
+                    self.ai_reflection_component.show_available_indicator()
+                    # Show the wisdom container
+                    if hasattr(self, 'wisdom_container'):
+                        self.wisdom_container.visible = True
+                        self.wisdom_container.update()
+                    print(f"Loaded AI reflection data for entry: {entry_date} (showing indicator)")
             else:
                 self.current_entry_content = ""
                 self.current_entry_exists = False
