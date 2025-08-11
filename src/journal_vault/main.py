@@ -552,8 +552,13 @@ class JournalVaultApp:
         """Handle AI regeneration request."""
         content = self.text_editor.get_content()
         if content.strip():
+            # Show generating state immediately for visual feedback
+            self.ai_reflection_component.show_generating_state()
             # Force regeneration by clearing cache
             self._generate_ai_reflection(content, force_regenerate=True)
+        else:
+            # Re-enable button if no content to regenerate
+            self.ai_reflection_component._set_regenerate_button_loading(False)
 
     def _on_ai_hide(self) -> None:
         """Handle AI hide request."""
@@ -634,6 +639,7 @@ class JournalVaultApp:
                     "generated_at": datetime.now().isoformat(),
                 }
                 self.ai_reflection_component.show_reflection(fallback_data)
+                self.ai_reflection_component._set_regenerate_button_loading(False)
                 return
 
             # Progress callback to update UI
@@ -662,8 +668,9 @@ class JournalVaultApp:
                 "cached": result.cached,
             }
 
-            # Show the reflection
+            # Show the reflection and re-enable regenerate button
             self.ai_reflection_component.show_reflection(reflection_data)
+            self.ai_reflection_component._set_regenerate_button_loading(False)
 
             # Save AI reflection data to the journal entry
             self._save_ai_reflection_to_entry(reflection_data)
@@ -709,44 +716,16 @@ class JournalVaultApp:
                 }
             )
 
-            # Show user-friendly error based on error type
+            # Show user-friendly error based on error type and re-enable button
             if "memory" in str(e).lower() or "insufficient" in str(e).lower():
-                error_data = {
-                    "insights": [
-                        "Not enough memory available for AI analysis.",
-                        "Try closing other applications and regenerating.",
-                    ],
-                    "questions": [
-                        "What insights can you draw from this entry yourself?"
-                    ],
-                    "themes": ["reflection"],
-                    "generated_at": datetime.now().isoformat(),
-                    "error": "Memory insufficient",
-                }
+                self.ai_reflection_component.show_error_state("Not enough memory available. Try closing other applications and regenerating.")
             elif "model" in str(e).lower() or "not found" in str(e).lower():
-                error_data = {
-                    "insights": [
-                        "AI model not available.",
-                        "Please ensure the AI model is downloaded in settings.",
-                    ],
-                    "questions": ["What themes do you notice in your writing?"],
-                    "themes": ["reflection"],
-                    "generated_at": datetime.now().isoformat(),
-                    "error": "Model not available",
-                }
+                self.ai_reflection_component.show_error_state("AI model not available. Please ensure the AI model is downloaded in settings.")
             else:
-                error_data = {
-                    "insights": [
-                        "AI analysis temporarily unavailable.",
-                        "Your thoughts and reflections are still valuable.",
-                    ],
-                    "questions": ["What stands out to you most in this entry?"],
-                    "themes": ["reflection"],
-                    "generated_at": datetime.now().isoformat(),
-                    "error": "Service temporarily unavailable",
-                }
-
-            self.ai_reflection_component.show_reflection(error_data)
+                self.ai_reflection_component.show_error_state(f"AI analysis temporarily unavailable: {str(e)}")
+            
+            # Ensure button is re-enabled in all error cases
+            self.ai_reflection_component._set_regenerate_button_loading(False)
 
     def _save_ai_reflection_to_entry(self, reflection_data: Dict[str, Any]) -> None:
         """Save AI reflection data to the current journal entry."""

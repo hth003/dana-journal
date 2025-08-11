@@ -510,14 +510,19 @@ Local AI-powered reflection system using Qwen2.5-3B-Instruct for generating insi
 - **Storage Management**: Organized model storage in ~/.journal_vault/models/ directory
 - **System Requirements**: Automatic disk space and memory checking
 
-#### AI Reflection UI Framework - ✅ FULLY IMPLEMENTED
+#### AI Reflection UI Framework - ✅ FULLY IMPLEMENTED + ENHANCED UX
 - **Manual Trigger**: AI button in text editor toolbar for user control
 - **Inline Display**: AIReflectionComponent integrated below text editor
 - **Persistent Storage**: Reflections saved with journal entries and reloaded on revisit
 - **Smart Content Detection**: AI button enabled when entry has meaningful content
-- **Regeneration Support**: Option to generate fresh insights for existing entries
+- **Enhanced Regeneration UX**: ⭐ **NEW - Advanced regeneration experience**
+  - **Immediate Visual Feedback**: Button instantly shows loading state when clicked
+  - **Loading Indicators**: "Regenerating..." text with ProgressRing animation
+  - **Smart Button States**: Disabled during processing to prevent double-clicks
+  - **Error Recovery**: Specific error messages with retry instructions
+  - **State Management**: Comprehensive handling of all interaction states
 - **Loading States**: Progress indicators during AI generation
-- **Error Handling**: Graceful AI service degradation with user feedback
+- **Error Handling**: Graceful AI service degradation with user-friendly feedback
 - **Hide/Show Controls**: User can hide reflection panel when desired
 
 #### Enhanced Onboarding Integration - ✅ FULLY IMPLEMENTED

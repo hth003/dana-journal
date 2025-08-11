@@ -24,12 +24,14 @@ class AIReflectionComponent:
         self.on_hide = on_hide
         self.is_visible = False
         self.current_reflection = None
+        self._is_regenerating = False
         
         # UI Components
         self.container = None
         self.content_area = None
         self.regenerate_button = None
         self.hide_button = None
+        self._regenerate_progress_ring = None
         
         self._build_component()
     
@@ -45,10 +47,29 @@ class AIReflectionComponent:
         )
         
         # Control buttons
+        # Create progress ring for loading state (initially hidden)
+        self._regenerate_progress_ring = ft.ProgressRing(
+            width=16,
+            height=16,
+            stroke_width=2,
+            color=colors.primary,
+            visible=False
+        )
+        
         self.regenerate_button = ft.TextButton(
             "Regenerate",
             icon=ft.Icons.REFRESH,
             on_click=lambda _: self._on_regenerate()
+        )
+        
+        # Create container for button with loading indicator
+        self._regenerate_button_container = ft.Row(
+            controls=[
+                self.regenerate_button,
+                self._regenerate_progress_ring
+            ],
+            tight=True,
+            spacing=8
         )
         
         self.hide_button = ft.TextButton(
@@ -76,7 +97,7 @@ class AIReflectionComponent:
                                 typography="h4"
                             ),
                             ft.Container(expand=True),
-                            self.regenerate_button,
+                            self._regenerate_button_container,
                             self.hide_button
                         ],
                         alignment=ft.MainAxisAlignment.START,
@@ -220,9 +241,69 @@ class AIReflectionComponent:
         
         self.content_area.controls = controls
     
+    def _set_regenerate_button_loading(self, loading: bool) -> None:
+        """Set the regenerate button loading state."""
+        self._is_regenerating = loading
+        
+        if loading:
+            self.regenerate_button.text = "Regenerating..."
+            self.regenerate_button.disabled = True
+            self.regenerate_button.icon = None  # Hide refresh icon
+            self._regenerate_progress_ring.visible = True
+        else:
+            self.regenerate_button.text = "Regenerate"
+            self.regenerate_button.disabled = False
+            self.regenerate_button.icon = ft.Icons.REFRESH  # Restore refresh icon
+            self._regenerate_progress_ring.visible = False
+        
+        # Update the UI
+        if hasattr(self, 'container') and self.container:
+            self.container.update()
+    
+    def _set_regenerate_button_enabled(self, enabled: bool) -> None:
+        """Set the regenerate button enabled state."""
+        self.regenerate_button.disabled = not enabled
+        if hasattr(self, 'container') and self.container:
+            self.container.update()
+    
+    def show_error_state(self, error_message: str) -> None:
+        """Show error state with retry option."""
+        self.content_area.controls = [
+            ft.Row(
+                controls=[
+                    ft.Icon(
+                        ft.Icons.ERROR_OUTLINE,
+                        color=self.theme_manager.colors.error,
+                        size=20
+                    ),
+                    ThemedText(
+                        self.theme_manager,
+                        f"Error generating reflection: {error_message}",
+                        variant="secondary"
+                    )
+                ],
+                spacing=SPACING["sm"],
+                alignment=ft.MainAxisAlignment.START
+            ),
+            ft.Container(height=SPACING["sm"]),
+            ThemedText(
+                self.theme_manager,
+                "Click 'Regenerate' to try again.",
+                variant="muted",
+                typography="body_sm"
+            )
+        ]
+        self._set_regenerate_button_loading(False)  # Ensure button is re-enabled
+        self.container.visible = True
+        self.container.update()
+    
     def _on_regenerate(self) -> None:
         """Handle regenerate button click."""
+        if self._is_regenerating:
+            return  # Prevent double-clicks
+        
         if self.on_regenerate:
+            self._set_regenerate_button_loading(True)
             self.on_regenerate()
     
     def _on_hide(self) -> None:
