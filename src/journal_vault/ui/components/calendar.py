@@ -208,9 +208,9 @@ class CalendarComponent:
             text_color = colors.text_on_primary
             border_color = colors.primary
         elif is_today:
-            bg_color = colors.primary + "40"  # Primary with 40% opacity for distinction
+            bg_color = colors.today_indicator + "40"  # Today indicator with 40% opacity
             text_color = colors.text_on_primary  # White text for readability
-            border_color = colors.primary
+            border_color = colors.today_indicator
         else:
             bg_color = "transparent"
             text_color = colors.text_primary if is_current_month else colors.text_muted
@@ -242,7 +242,7 @@ class CalendarComponent:
                             width=3,  # Smaller dot
                             height=3,  # Smaller dot
                             border_radius=1.5,
-                            bgcolor=colors.accent if not is_selected else colors.text_on_primary,
+                            bgcolor=colors.entry_indicator if not is_selected else colors.text_on_primary,
                         ),
                         alignment=ft.alignment.bottom_center,
                         margin=ft.margin.only(bottom=2),  # Reduced margin
@@ -276,6 +276,10 @@ class CalendarComponent:
         """Create legend showing what the indicators mean."""
         colors = self.theme_manager.colors
         
+        # Color scheme:
+        # - Entry indicator: Terracotta (#E07A5F) - for days with journal entries
+        # - Today indicator: Sage green (#81B29A) - for current date
+        
         return ft.Row(
             controls=[
                 # Entry indicator
@@ -285,7 +289,7 @@ class CalendarComponent:
                             width=4,  # Smaller dot
                             height=4,  # Smaller dot
                             border_radius=2,
-                            bgcolor=colors.accent
+                            bgcolor=colors.entry_indicator
                         ),
                         ThemedText(
                             self.theme_manager,
@@ -304,7 +308,7 @@ class CalendarComponent:
                             width=4,  # Smaller dot
                             height=4,  # Smaller dot
                             border_radius=2,
-                            bgcolor=colors.primary
+                            bgcolor=colors.today_indicator
                         ),
                         ThemedText(
                             self.theme_manager,
@@ -483,6 +487,36 @@ class MiniCalendar(CalendarComponent):
             alignment=ft.MainAxisAlignment.CENTER
         )
     
+    def _create_compact_calendar_grid(self) -> ft.Column:
+        """Create the compact calendar grid with dates."""
+        # Get calendar data for current month
+        cal = calendar.monthcalendar(self.current_date.year, self.current_date.month)
+        
+        weeks = []
+        for week in cal:
+            week_row = self._create_compact_week_row(week)
+            weeks.append(week_row)
+        
+        return ft.Column(
+            controls=weeks,
+            spacing=1,
+            tight=True
+        )
+    
+    def _create_compact_week_row(self, week: list) -> ft.Row:
+        """Create a compact row representing a week."""
+        days = []
+        
+        for day in week:
+            day_container = self._create_day_container(day)
+            days.append(day_container)
+        
+        return ft.Row(
+            controls=days,
+            spacing=1,
+            alignment=ft.MainAxisAlignment.CENTER
+        )
+    
     def _create_day_container(self, day: int) -> ft.Container:
         """Create a compact container for a single day."""
         colors = self.theme_manager.colors
@@ -499,7 +533,7 @@ class MiniCalendar(CalendarComponent):
             bg_color = colors.primary
             text_color = colors.text_on_primary
         elif is_today:
-            bg_color = colors.primary + "40"  # Primary with 40% opacity for distinction
+            bg_color = colors.today_indicator + "40"  # Today indicator with 40% opacity
             text_color = colors.text_on_primary  # White text for readability
         else:
             bg_color = "transparent"
@@ -524,7 +558,7 @@ class MiniCalendar(CalendarComponent):
                             width=3,
                             height=3,
                             border_radius=1.5,
-                            bgcolor=colors.accent if not is_selected else colors.text_on_primary,
+                            bgcolor=colors.entry_indicator if not is_selected else colors.text_on_primary,
                         ),
                         alignment=ft.alignment.bottom_center,
                         margin=ft.margin.only(bottom=2),

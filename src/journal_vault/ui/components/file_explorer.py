@@ -165,9 +165,9 @@ class FileExplorer:
             content=ft.Column(
                 controls=[
                     header,
-                    ft.Container(height=SPACING["sm"]),
+                    ft.Container(height=SPACING["xs"]),  # Reduced from sm to xs
                     self.search_field,
-                    ft.Container(height=SPACING["sm"]),
+                    ft.Container(height=SPACING["xs"]),  # Reduced from sm to xs
                     ft.Stack(
                         controls=[self.tree_view, self.search_results], expand=True
                     ),

@@ -278,12 +278,9 @@ class JournalVaultApp:
             padding=ft.padding.all(SPACING["md"]),
         )
 
-        # Files section with file explorer
-        files_section = ft.Container(
-            content=self.file_explorer.get_container(),
-            padding=ft.padding.all(SPACING["md"]),
-            expand=True,
-        )
+        # Files section with file explorer - REMOVED DOUBLE CONTAINER
+        # The FileExplorer component already has its own ThemedContainer with proper padding
+        files_section = self.file_explorer.get_container()
 
         # Left sidebar container with consistent sizing
         left_sidebar = ft.Container(
