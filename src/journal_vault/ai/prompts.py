@@ -63,7 +63,7 @@ Please respond in this exact JSON format:
 {{
     "insights": [
         "First key insight about the writer's thoughts, feelings, or situation",
-        "Second insight that helps them understand patterns or connections",
+        "Second insight that helps them understand patterns, connections, people, and relationships. ",
         "Third insight focusing on growth opportunities or strengths"
     ],
     "questions": [
@@ -78,6 +78,7 @@ Please respond in this exact JSON format:
 }}
 
 Guidelines:
+- Address the writer directly as "you"
 - Insights should be compassionate, specific, and actionable
 - Questions should be open-ended and encourage deeper reflection
 - Themes should be 1-2 words describing key topics (e.g., "relationships", "career", "self_care", "growth", "creativity")
