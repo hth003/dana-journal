@@ -1,8 +1,8 @@
 """
-Theme System for AI Journal Vault
+Theme System for DANA - The AI Journal Vault
 
-Simplified dark theme system providing consistent styling and colors
-for a focused, calming journaling experience.
+Warm, companion-like theme system providing consistent styling and colors
+for a supportive, human-centered journaling experience.
 """
 
 from dataclasses import dataclass
@@ -14,88 +14,91 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class DarkTheme:
-    """Enhanced dark theme color scheme for AI Journal Vault."""
-    # Core colors - Refined for better contrast and depth
-    background: str = "#0A0E1A"          # Deeper midnight for more depth
-    surface: str = "#1A1F2E"            # Warmer dark slate
-    surface_variant: str = "#2A3441"    # Elevated surface
-    surface_elevated: str = "#323B4A"   # Higher elevation surface
-    primary: str = "#8B5CF6"            # Violet (unchanged)
-    primary_variant: str = "#7C3AED"    # Darker violet
-    primary_subtle: str = "#8B5CF615"   # Primary with 15% opacity
-    secondary: str = "#06B6D4"          # Cyan accent
-    accent: str = "#F59E0B"             # Amber accent
+class DANATheme:
+    """Warm companion theme color scheme for DANA - The AI Journal Vault."""
+    # Core colors - Warm, companion-like palette for human connection
+    background: str = "#FAF8F5"          # Warm off-white (journal paper)
+    surface: str = "#F5F2ED"            # Soft cream surface
+    surface_variant: str = "#EFEBE3"    # Slightly elevated cream
+    surface_elevated: str = "#FFFFFF"   # Pure white for elevated cards
+    primary: str = "#E07A5F"            # Terracotta - warm, human, approachable
+    primary_variant: str = "#D96847"    # Slightly darker terracotta
+    primary_subtle: str = "#E07A5F15"   # Primary with 15% opacity
+    secondary: str = "#3D5A80"          # Deep blue - trust, wisdom
+    accent: str = "#81B29A"             # Sage green - growth, reflection
     
-    # Text colors - Improved hierarchy
-    text_primary: str = "#F8FAFC"       # Pure off-white for better contrast
-    text_secondary: str = "#CBD5E1"     # Light gray
-    text_muted: str = "#94A3B8"         # Muted gray
-    text_subtle: str = "#64748B"        # More subtle text
-    text_on_primary: str = "#FFFFFF"    # White on primary
-    text_on_dark: str = "#F1F5F9"       # Text on dark surfaces
+    # Text colors - Warm, readable hierarchy
+    text_primary: str = "#2C2421"       # Rich dark brown (ink-like)
+    text_secondary: str = "#5D5651"     # Medium warm gray
+    text_muted: str = "#8B8580"         # Light warm gray
+    text_subtle: str = "#ADA8A3"        # Very light warm gray
+    text_on_primary: str = "#FFFFFF"    # White on terracotta
+    text_on_dark: str = "#2C2421"       # Dark text on light surfaces
     
-    # Border and divider colors - More subtle gradations
-    border: str = "#334155"             # Primary borders
-    border_subtle: str = "#1E293B"      # Subtle borders
-    border_focus: str = "#8B5CF6"       # Focus state borders
-    divider: str = "#1E293B"            # Dividers
+    # Border and divider colors - Soft, warm boundaries
+    border: str = "#ADA8A3"             # Primary borders
+    border_subtle: str = "#D4CFC7"      # Subtle borders
+    border_focus: str = "#E07A5F"       # Focus state borders (terracotta)
+    divider: str = "#D4CFC7"            # Dividers
     
-    # State colors - Improved accessibility
-    success: str = "#10B981"            # Green
-    success_subtle: str = "#10B98120"   # Green with opacity
-    warning: str = "#F59E0B"            # Amber
-    warning_subtle: str = "#F59E0B20"   # Amber with opacity  
-    error: str = "#EF4444"              # Red
-    error_subtle: str = "#EF444420"     # Red with opacity
-    info: str = "#3B82F6"               # Blue
-    info_subtle: str = "#3B82F620"      # Blue with opacity
+    # State colors - Warm, approachable feedback
+    success: str = "#6BA368"            # Warm green
+    success_subtle: str = "#6BA36820"   # Green with opacity
+    warning: str = "#E6B84A"            # Warm amber
+    warning_subtle: str = "#E6B84A20"   # Amber with opacity  
+    error: str = "#D67B7B"              # Soft red
+    error_subtle: str = "#D67B7B20"     # Red with opacity
+    info: str = "#7BA3D4"               # Soft blue
+    info_subtle: str = "#7BA3D420"      # Blue with opacity
     
-    # Interactive states - More pronounced feedback
-    hover: str = "#8B5CF610"            # Primary hover (subtle)
-    hover_strong: str = "#8B5CF625"     # Strong hover state
-    pressed: str = "#8B5CF630"          # Pressed state
-    selected: str = "#8B5CF620"         # Selected state
-    focus: str = "#8B5CF640"            # Focus state
-    disabled: str = "#64748B50"         # Disabled state
+    # Interactive states - Warm, welcoming feedback
+    hover: str = "#E07A5F10"            # Terracotta hover (subtle)
+    hover_strong: str = "#E07A5F25"     # Strong hover state
+    pressed: str = "#E07A5F30"          # Pressed state
+    selected: str = "#E07A5F20"         # Selected state
+    focus: str = "#E07A5F40"            # Focus state
+    disabled: str = "#ADA8A350"         # Disabled state
     
-    # Shadow system - More depth
-    shadow_sm: str = "#00000008"        # Subtle shadow
-    shadow_md: str = "#00000015"        # Default shadow
-    shadow_lg: str = "#00000025"        # Elevated shadow
-    shadow_xl: str = "#00000040"        # Heavy shadow
-    shadow_light: str = "#00000012"      # Light shadow for components
+    # Shadow system - Warm, soft shadows
+    shadow_sm: str = "#E07A5F08"        # Subtle terracotta shadow
+    shadow_md: str = "#E07A5F12"        # Default warm shadow
+    shadow_lg: str = "#E07A5F16"        # Elevated warm shadow
+    shadow_xl: str = "#E07A5F20"        # Heavy warm shadow
+    shadow_light: str = "#E07A5F10"      # Light shadow for components
+    shadow_wisdom: str = "#E07A5F15"     # Special shadow for wisdom cards
     
-    # Entry indicator colors
-    entry_indicator: str = "#F59E0B"    # Amber for entries
-    today_indicator: str = "#8B5CF6"    # Primary for today
+    # Journal-specific colors
+    entry_indicator: str = "#E07A5F"    # Terracotta for entries
+    today_indicator: str = "#81B29A"    # Sage green for today
+    reflection_glow: str = "#E07A5F20"  # Subtle terracotta glow for AI insights
+    wisdom_card_bg: str = "#FFFFFF"     # Pure white for wisdom cards
 
 
 class ThemeManager:
-    """Simplified theme manager that provides consistent dark theme colors."""
+    """Simplified theme manager that provides consistent DANA theme colors."""
     
     def __init__(self):
-        """Initialize theme manager with dark theme."""
-        self._colors = DarkTheme()
+        """Initialize theme manager with DANA theme."""
+        self._colors = DANATheme()
         
     @property
-    def colors(self) -> DarkTheme:
-        """Get current theme colors (always dark mode)."""
+    def colors(self) -> DANATheme:
+        """Get current theme colors (always DANA theme)."""
         return self._colors
     
     @property
     def current_theme(self) -> str:
-        """Get current theme name (always 'dark')."""
-        return "dark"
+        """Get current theme name (always 'dana')."""
+        return "dana"
     
     @property
     def is_dark(self) -> bool:
-        """Check if current theme is dark (always True)."""
-        return True
+        """Check if current theme is dark (False for DANA's light theme)."""
+        return False
 
 
 class ThemedContainer(ft.Container):
-    """A container that automatically applies dark theme colors."""
+    """A container that automatically applies DANA theme colors."""
     
     def __init__(
         self,
@@ -167,7 +170,7 @@ class ThemedContainer(ft.Container):
 
 
 class ThemedText(ft.Text):
-    """Text component that automatically applies dark theme colors."""
+    """Text component that automatically applies DANA theme colors."""
     
     def __init__(
         self,
@@ -220,28 +223,38 @@ class ThemedText(ft.Text):
 
 
 
-# Typography Scale - Following 1.25 (Major Third) ratio for visual harmony
-TYPO_SCALE = {
-    "display": 48,      # App title, major headings
-    "h1": 38,          # Primary headings
-    "h2": 30,          # Section headings  
-    "h3": 24,          # Subsection headings
-    "h4": 19,          # Component titles
-    "body_xl": 16,     # Large body text
-    "body": 14,        # Default body text
-    "body_sm": 12,     # Small body text
-    "caption": 10,     # Captions, labels
+# Font Families - DANA dual typography system
+FONT_FAMILIES = {
+    "ui": "Inter, -apple-system, system-ui, sans-serif",           # UI elements, buttons, labels
+    "content": "Crimson Pro, Georgia, Times New Roman, serif",     # Journal content, reading text
+    "accent": "Inter, -apple-system, system-ui, sans-serif",       # Special accent text
 }
 
-# Line height ratios for optimal readability
+# Typography Scale - Following 1.25 (Major Third) ratio for visual harmony and comfort
+TYPO_SCALE = {
+    "display": 52,      # DANA brand name (larger for presence)
+    "h1": 42,          # Page titles
+    "h2": 34,          # Section headings  
+    "h3": 27,          # Component titles
+    "h4": 22,          # Card headers
+    "body_xl": 20,     # Large reading text (Crimson Pro)
+    "body": 18,        # Default content (Crimson Pro)
+    "body_ui": 16,     # UI labels (Inter)
+    "body_sm": 14,     # Small text
+    "caption": 13,     # Labels, metadata
+    "label": 12,       # Form labels, buttons
+}
+
+# Line height ratios for optimal readability and comfort
 LINE_HEIGHT_RATIOS = {
-    "tight": 1.2,      # Headlines
-    "normal": 1.4,     # Body text
-    "relaxed": 1.6,    # Long-form content
+    "tight": 1.1,      # Display text (DANA brand)
+    "normal": 1.4,     # Headlines and UI text
+    "comfortable": 1.6, # Body text (Crimson Pro for reading)
+    "relaxed": 1.8,    # Long-form journal content
 }
 
 def get_text_style(theme_manager: ThemeManager, variant: str = "body") -> ft.TextStyle:
-    """Get text style with improved typography scale and hierarchy."""
+    """Get text style with DANA typography system using Inter for UI and Crimson Pro for content."""
     colors = theme_manager.colors
     
     base_styles = {
@@ -250,58 +263,74 @@ def get_text_style(theme_manager: ThemeManager, variant: str = "body") -> ft.Tex
             weight=ft.FontWeight.BOLD,
             color=colors.text_primary,
             height=LINE_HEIGHT_RATIOS["tight"],
+            font_family=FONT_FAMILIES["ui"],  # Inter for DANA branding
         ),
         "h1": ft.TextStyle(
             size=TYPO_SCALE["h1"],
             weight=ft.FontWeight.BOLD,
             color=colors.text_primary,
-            height=LINE_HEIGHT_RATIOS["tight"],
+            height=LINE_HEIGHT_RATIOS["normal"],
+            font_family=FONT_FAMILIES["ui"],  # Inter for UI headers
         ),
         "h2": ft.TextStyle(
             size=TYPO_SCALE["h2"],
             weight=ft.FontWeight.W_600,
             color=colors.text_primary,
-            height=LINE_HEIGHT_RATIOS["tight"],
+            height=LINE_HEIGHT_RATIOS["normal"],
+            font_family=FONT_FAMILIES["ui"],  # Inter for UI headers
         ),
         "h3": ft.TextStyle(
             size=TYPO_SCALE["h3"],
             weight=ft.FontWeight.W_600,
             color=colors.text_primary,
             height=LINE_HEIGHT_RATIOS["normal"],
+            font_family=FONT_FAMILIES["ui"],  # Inter for UI headers
         ),
         "h4": ft.TextStyle(
             size=TYPO_SCALE["h4"],
             weight=ft.FontWeight.W_500,
             color=colors.text_primary,
             height=LINE_HEIGHT_RATIOS["normal"],
+            font_family=FONT_FAMILIES["ui"],  # Inter for UI headers
         ),
         "body_xl": ft.TextStyle(
             size=TYPO_SCALE["body_xl"],
             color=colors.text_primary,
-            height=LINE_HEIGHT_RATIOS["normal"],
+            height=LINE_HEIGHT_RATIOS["comfortable"],
+            font_family=FONT_FAMILIES["content"],  # Crimson Pro for reading
         ),
         "body": ft.TextStyle(
             size=TYPO_SCALE["body"],
             color=colors.text_primary,
+            height=LINE_HEIGHT_RATIOS["comfortable"],
+            font_family=FONT_FAMILIES["content"],  # Crimson Pro for reading
+        ),
+        "body_ui": ft.TextStyle(
+            size=TYPO_SCALE["body_ui"],
+            color=colors.text_primary,
             height=LINE_HEIGHT_RATIOS["normal"],
+            font_family=FONT_FAMILIES["ui"],  # Inter for UI text
         ),
         "body_sm": ft.TextStyle(
             size=TYPO_SCALE["body_sm"],
             color=colors.text_secondary,
             height=LINE_HEIGHT_RATIOS["normal"],
+            font_family=FONT_FAMILIES["ui"],  # Inter for small UI text
         ),
         "caption": ft.TextStyle(
             size=TYPO_SCALE["caption"],
             color=colors.text_muted,
             weight=ft.FontWeight.W_500,
             height=LINE_HEIGHT_RATIOS["normal"],
+            font_family=FONT_FAMILIES["ui"],  # Inter for captions
             letter_spacing=0.3,
         ),
         "label": ft.TextStyle(
-            size=TYPO_SCALE["caption"],
+            size=TYPO_SCALE["label"],
             weight=ft.FontWeight.W_600,
             color=colors.text_muted,
             height=LINE_HEIGHT_RATIOS["normal"],
+            font_family=FONT_FAMILIES["ui"],  # Inter for labels
             letter_spacing=0.8,
         ),
     }
@@ -343,7 +372,7 @@ SPACING = {
     "4xl": 64,         # 4rem - Layout spacing
 }
 
-# Elevation system for consistent shadows and layering
+# Elevation system for warm, soft shadows that complement DANA's design
 ELEVATION = {
     "none": {
         "shadow": None,
@@ -351,34 +380,40 @@ ELEVATION = {
         "offset": (0, 0)
     },
     "sm": {
-        "shadow": "#00000008",
+        "shadow": "#E07A5F08",  # Subtle terracotta shadow
         "blur": 2,
         "offset": (0, 1)
     },
     "md": {
-        "shadow": "#00000015",
+        "shadow": "#E07A5F12",  # Default warm shadow
         "blur": 4,
         "offset": (0, 2)
     },
     "lg": {
-        "shadow": "#00000025",
+        "shadow": "#E07A5F16",  # Elevated warm shadow
         "blur": 8,
         "offset": (0, 4)
     },
     "xl": {
-        "shadow": "#00000040",
+        "shadow": "#E07A5F20",  # Heavy warm shadow
         "blur": 16,
         "offset": (0, 8)
+    },
+    "wisdom": {
+        "shadow": "#E07A5F15",  # Special shadow for wisdom cards
+        "blur": 6,
+        "offset": (0, 3)
     }
 }
 
-# Border radius scale for consistent rounded corners
+# Border radius scale for softer, more companion-like design
 RADIUS = {
     "none": 0,
-    "sm": 4,           # Small components
-    "md": 8,           # Default components
-    "lg": 12,          # Cards, containers
-    "xl": 16,          # Large containers
+    "sm": 8,           # Small components (increased for warmth)
+    "md": 12,          # Default components (increased for warmth)
+    "lg": 16,          # Cards, containers (DANA's standard radius)
+    "xl": 24,          # Large containers (more rounded)
+    "wisdom": 20,      # Special radius for wisdom cards
     "full": 9999,      # Pills, badges
 }
 

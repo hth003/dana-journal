@@ -1,5 +1,5 @@
 """
-Onboarding Flow for AI Journal Vault
+Onboarding Flow for Dana - safe journal space
 
 Comprehensive onboarding experience including welcome screen, privacy explanation,
 storage location selection, theme preference, and optional first entry creation.
@@ -139,7 +139,7 @@ class OnboardingFlow:
                 ),
                 ThemedText(
                     self.theme_manager,
-                    "Welcome to AI Journal Vault",
+                    "Welcome to Dana - safe journal space",
                     variant="primary",
                     size=32,
                     weight=ft.FontWeight.BOLD,
@@ -563,8 +563,6 @@ class OnboardingFlow:
     
     def _get_ai_setup_content(self) -> ThemedContainer:
         """Get AI setup content based on current state."""
-        colors = self.theme_manager.colors
-        
         if self.ai_manager.is_model_available():
             # Model already available
             return self._create_ai_ready_content()
@@ -2149,7 +2147,7 @@ class OnboardingFlow:
             # Create error dialog
             def close_dialog(_):
                 error_dialog.open = False
-                e.page.update()
+                self.page.update()
             
             error_dialog = ft.AlertDialog(
                 title=ft.Text("Storage Selection Error"),

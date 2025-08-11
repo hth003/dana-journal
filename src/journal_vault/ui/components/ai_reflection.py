@@ -1,17 +1,17 @@
 """
-AI Reflection Component for AI Journal Vault
+Dana's Wisdom Component for Dana - safe journal space
 
-An inline component that displays AI-generated reflections below the text editor
-with manual trigger support and persistent display.
+A warm, companion-like component that displays supportive insights and reflections
+below the text editor with gentle, encouraging guidance.
 """
 
 import flet as ft
 from typing import Optional, Callable, Dict, Any
-from ..theme import ThemeManager, ThemedText, ThemedCard, SPACING, TYPO_SCALE
+from ..theme import ThemeManager, ThemedText, SPACING, TYPO_SCALE, RADIUS
 
 
-class AIReflectionComponent:
-    """Inline AI reflection display component."""
+class DanaWisdomComponent:
+    """Inline companion wisdom display component with sage green accents."""
     
     def __init__(
         self,
@@ -57,8 +57,8 @@ class AIReflectionComponent:
         )
         
         self.regenerate_button = ft.TextButton(
-            "Regenerate",
-            icon=ft.Icons.REFRESH,
+            "New Reflection",  # Clean text without duplicate icon
+            icon=ft.Icons.AUTO_AWESOME,  # Single sparkle icon
             on_click=lambda _: self._on_regenerate()
         )
         
@@ -73,28 +73,28 @@ class AIReflectionComponent:
         )
         
         self.hide_button = ft.TextButton(
-            "Hide",
-            icon=ft.Icons.VISIBILITY_OFF,
+            "Hide",  # User preferred text
+            icon=ft.Icons.VISIBILITY_OFF,  # More appropriate hide icon
             on_click=lambda _: self._on_hide()
         )
         
-        # Main container
+        # Main container - optimized for minimal space usage
         self.container = ft.Container(
             content=ft.Column(
                 controls=[
-                    # Header
+                    # Compact header
                     ft.Row(
                         controls=[
                             ft.Icon(
-                                ft.Icons.PSYCHOLOGY,
-                                color=colors.primary,
-                                size=TYPO_SCALE["h4"]
+                                ft.Icons.NATURE_PEOPLE,  # More organic, companion-like icon
+                                color=colors.accent,  # Sage green accent instead of primary
+                                size=TYPO_SCALE["body"]  # Smaller icon to save space
                             ),
                             ThemedText(
                                 self.theme_manager,
-                                "AI Reflection",
+                                "Dana's Wisdom",  # Warm, companion-like name
                                 variant="primary",
-                                typography="h4"
+                                typography="body_sm"  # Smaller header text
                             ),
                             ft.Container(expand=True),
                             self._regenerate_button_container,
@@ -102,20 +102,31 @@ class AIReflectionComponent:
                         ],
                         alignment=ft.MainAxisAlignment.START,
                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                        spacing=SPACING["sm"]
+                        spacing=SPACING["xs"]  # Tighter spacing
                     ),
                     
-                    # Content area
-                    ThemedCard(
-                        self.theme_manager,
-                        elevation="sm",
+                    # Compact wisdom card with special styling
+                    ft.Container(
                         content=self.content_area,
-                        spacing="md"
+                        bgcolor=colors.wisdom_card_bg,  # Pure white for wisdom cards
+                        border_radius=RADIUS["md"],  # Smaller radius for compactness
+                        padding=ft.padding.all(SPACING["md"]),  # Reduced padding
+                        shadow=ft.BoxShadow(
+                            spread_radius=0,
+                            blur_radius=4,  # Lighter shadow for less visual weight
+                            color=colors.shadow_wisdom,  # Special warm shadow
+                            offset=ft.Offset(0, 2)  # Smaller offset for subtlety
+                        ),
+                        border=ft.border.all(1, colors.accent + "20")  # Subtle sage green border
                     )
                 ],
-                spacing=SPACING["md"]
+                spacing=SPACING["xs"],  # Tighter spacing between header and content
+                tight=True  # Minimize vertical space
             ),
-            padding=ft.padding.all(SPACING["md"]),
+            padding=ft.padding.symmetric(
+                horizontal=SPACING["md"],
+                vertical=SPACING["sm"]  # Reduced vertical padding
+            ),
             visible=False  # Hidden by default
         )
     
@@ -139,7 +150,7 @@ class AIReflectionComponent:
                     ),
                     ThemedText(
                         self.theme_manager,
-                        "Generating AI reflection...",
+                        "Dana is reflecting on your thoughts...",  # More personal and companion-like
                         variant="secondary"
                     )
                 ],
@@ -164,7 +175,7 @@ class AIReflectionComponent:
             controls.append(
                 ThemedText(
                     self.theme_manager,
-                    "Key Insights:",
+                    "🌱 What I noticed:",  # More personal, growth-oriented language
                     variant="primary",
                     typography="body_sm",
                     weight=ft.FontWeight.W_600
@@ -192,7 +203,7 @@ class AIReflectionComponent:
             controls.append(
                 ThemedText(
                     self.theme_manager,
-                    "Reflection Questions:",
+                    "✨ Questions to explore:",  # More inviting and exploratory
                     variant="primary",
                     typography="body_sm",
                     weight=ft.FontWeight.W_600
@@ -220,7 +231,7 @@ class AIReflectionComponent:
             controls.append(
                 ThemedText(
                     self.theme_manager,
-                    "Themes:",
+                    "🌿 Gentle themes:",  # More nurturing language
                     variant="muted",
                     typography="caption"
                 )
@@ -246,14 +257,14 @@ class AIReflectionComponent:
         self._is_regenerating = loading
         
         if loading:
-            self.regenerate_button.text = "Regenerating..."
+            self.regenerate_button.text = "Reflecting..."
             self.regenerate_button.disabled = True
-            self.regenerate_button.icon = None  # Hide refresh icon
+            self.regenerate_button.icon = None  # Hide sparkle icon
             self._regenerate_progress_ring.visible = True
         else:
-            self.regenerate_button.text = "Regenerate"
+            self.regenerate_button.text = "New Reflection"
             self.regenerate_button.disabled = False
-            self.regenerate_button.icon = ft.Icons.REFRESH  # Restore refresh icon
+            self.regenerate_button.icon = ft.Icons.AUTO_AWESOME  # Restore sparkle icon
             self._regenerate_progress_ring.visible = False
         
         # Update the UI
@@ -278,7 +289,7 @@ class AIReflectionComponent:
                     ),
                     ThemedText(
                         self.theme_manager,
-                        f"Error generating reflection: {error_message}",
+                        f"I'm having trouble reflecting right now: {error_message}",  # More personal error message
                         variant="secondary"
                     )
                 ],
@@ -288,7 +299,7 @@ class AIReflectionComponent:
             ft.Container(height=SPACING["sm"]),
             ThemedText(
                 self.theme_manager,
-                "Click 'Regenerate' to try again.",
+                "Let's try again when you're ready ✨",  # More encouraging and supportive
                 variant="muted",
                 typography="body_sm"
             )
@@ -314,3 +325,7 @@ class AIReflectionComponent:
     def get_container(self) -> ft.Control:
         """Get the component container."""
         return self.container
+
+
+# Backward compatibility alias
+AIReflectionComponent = DanaWisdomComponent

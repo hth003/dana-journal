@@ -1,9 +1,9 @@
 [project]
 name = "journal-vault"
 version = "0.1.0"
-description = "A privacy-first desktop journaling application with local AI insights"
+description = "Dana - safe journal space: A privacy-first desktop journaling companion with local AI support"
 authors = [
-    {name = "AI Journal Vault Team"}
+    {name = "Dana Team"}
 ]
 readme = "README.md"
 requires-python = ">=3.11"

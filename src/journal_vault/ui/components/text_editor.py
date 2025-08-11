@@ -1,5 +1,5 @@
 """
-Enhanced Text Editor Component for AI Journal Vault
+Enhanced Text Editor Component for Dana - safe journal space
 
 A sophisticated markdown-aware text editor with auto-save and
 formatting shortcuts.

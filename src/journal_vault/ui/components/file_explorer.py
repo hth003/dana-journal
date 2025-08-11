@@ -1,5 +1,5 @@
 """
-File Explorer Component for AI Journal Vault
+File Explorer Component for Dana - safe journal space
 
 A sidebar file browser that integrates with the storage system to show
 journal entries organized by date and folder structure.
@@ -250,7 +250,7 @@ class FileExplorer:
                 year_nodes[year].add_child(month_node)
 
             # Create entry node
-            entry_name = entry_date.strftime("%d - %A")  # "01 - Monday"
+            entry_name = entry_date.strftime("%d - %a")  # "01 - Mon" (shortened to avoid overflow)
             entry_node = FileTreeNode(
                 entry_name,
                 self.file_manager._get_entry_file_path(entry_date),

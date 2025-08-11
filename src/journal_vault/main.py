@@ -1,5 +1,5 @@
 """
-AI Journal Vault - Main Application Entry Point
+Dana - safe journal space - Main Application Entry Point
 
 A privacy-first desktop journaling application with local AI-powered insights.
 """
@@ -27,7 +27,7 @@ from .ai import AIReflectionService, AIServiceConfig
 
 
 class JournalVaultApp:
-    """Main application class for AI Journal Vault."""
+    """Main application class for Dana - safe journal space."""
 
     def __init__(self, page: ft.Page):
         self.page = page
@@ -83,7 +83,7 @@ class JournalVaultApp:
 
     def _setup_page(self) -> None:
         """Configure page properties and theme."""
-        self.page.title = "AI Journal Vault"
+        self.page.title = "Dana - safe journal space"
         # Apply saved window state
         window_state = app_config.get_window_state()
         self.page.window.width = window_state.get("width", 1400)
@@ -230,7 +230,7 @@ class JournalVaultApp:
                 controls=[
                     ThemedText(
                         self.theme_manager,
-                        "AI Journal Vault",
+                        "Dana - safe journal space",
                         variant="primary",
                         typography="h3",
                     ),
@@ -351,14 +351,27 @@ class JournalVaultApp:
             on_hide=self._on_ai_hide,
         )
 
+        # Create scrollable container for text editor to maintain writing focus
+        text_editor_scroll = ft.Container(
+            content=self.text_editor.get_container(),
+            expand=True,  # Text editor gets priority for space
+        )
+        
+        # Create wisdom card container with controlled sizing
+        wisdom_container = ft.Container(
+            content=self.ai_reflection_component.get_container(),
+            # Don't expand - let it size based on content
+            # This prevents it from competing with text editor for space
+        )
+        
         journal_entry_section = ft.Container(
             content=ft.Column(
                 controls=[
                     entry_header,
                     ft.Container(height=SPACING["sm"]),
-                    ft.Container(content=self.text_editor.get_container(), expand=True),
-                    # AI reflection component (inline)
-                    self.ai_reflection_component.get_container(),
+                    text_editor_scroll,  # Text editor with priority expansion
+                    ft.Container(height=SPACING["xs"]),  # Small gap
+                    wisdom_container,  # Wisdom card without expansion
                 ],
                 spacing=0,
                 expand=True,

@@ -1,5 +1,5 @@
 """
-Calendar Component for AI Journal Vault
+Calendar Component for Dana - safe journal space
 
 Interactive calendar view that shows month navigation, entry indicators,
 and allows date selection for viewing/creating entries.
@@ -34,8 +34,6 @@ class CalendarComponent:
     
     def _create_calendar_container(self) -> ThemedContainer:
         """Create the main calendar container."""
-        colors = self.theme_manager.colors
-        
         return ThemedContainer(
             self.theme_manager,
             variant="background",
@@ -129,7 +127,6 @@ class CalendarComponent:
     
     def _create_weekday_headers(self) -> ft.Row:
         """Create weekday headers."""
-        colors = self.theme_manager.colors
         weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
         
         headers = []
