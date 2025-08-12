@@ -1,6 +1,6 @@
-# AI Journal Vault - Technical Architecture Documentation
+# DANA - safe journal space - Technical Architecture Documentation
 
-This document provides the technical architecture of AI Journal Vault, focusing on system design, component interactions, data flows, and architectural decisions. For implementation status and project overview, see PROJECT_OUTLINE.md.
+This document provides the technical architecture of DANA - safe journal space, focusing on system design, component interactions, data flows, and architectural decisions for the warm, companion-like journaling application. For implementation status and project overview, see PROJECT_OUTLINE.md.
 
 ## Table of Contents
 
@@ -18,15 +18,15 @@ This document provides the technical architecture of AI Journal Vault, focusing 
 
 ## Architecture Overview
 
-AI Journal Vault is a privacy-first desktop journaling application built with Python and Flet. The architecture follows a modular, layered design with clear separation of concerns between UI, business logic, data persistence, and AI integration. The application includes a complete AI model download and management system with HuggingFace integration for local AI-powered reflection features.
+DANA - safe journal space is a privacy-first desktop journaling application built with Python and Flet with a warm, companion-like interface. The architecture follows a modular, layered design with clear separation of concerns between UI, business logic, data persistence, and AI integration. The application includes a complete AI model download and management system with HuggingFace integration for local AI-powered reflection features.
 
-**Architecture Status**: Production-ready with modular design. AI integration infrastructure complete with comprehensive model download system (ModelDownloadManager), complete UI framework (AIReflectionComponent), enhanced 4-step onboarding with AI setup, and configuration management fully implemented. Only final AI inference pipeline integration pending.
+**Architecture Status**: Production-ready with modular design. AI integration infrastructure complete with comprehensive model download system (ModelDownloadManager), complete collapsible wisdom cards UI framework (DanaWisdomComponent), enhanced 4-step onboarding with AI setup, prompt engineering system with Melanie Klein persona, and configuration management fully implemented. Only final AI inference pipeline integration pending.
 
 ### High-Level Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    AI Journal Vault                         │
+│                 DANA - safe journal space                   │
 ├─────────────────────────────────────────────────────────────┤
 │  Frontend Layer (Flet-based GUI) ✅ IMPLEMENTED            │
 │  ┌─────────────┬─────────────┬─────────────┬─────────────┐ │
@@ -67,14 +67,16 @@ AI Journal Vault is a privacy-first desktop journaling application built with Py
 - **Storage Layer**: File-based system with SQLite indexing for performance
 - **Configuration Layer**: Persistent settings with validation and defaults
 
-### AI Integration Architecture (95% Complete)
-- **UI Framework**: AI reflection components implemented and integrated with enhanced UX ✅ COMPLETE
+### DANA's Wisdom Architecture (99% Complete)
+- **Wisdom Components**: Collapsible wisdom cards with companion interface ✅ COMPLETE
+- **Prompt Engineering**: Complete JournalPromptEngine with Melanie Klein persona ✅ COMPLETE
+- **Enhanced Regeneration**: Immediate visual feedback and smooth state transitions ✅ COMPLETE
 - **Model Download System**: HuggingFace integration with progress tracking ✅ COMPLETE
 - **Enhanced Onboarding**: 4-step flow with AI model setup ✅ COMPLETE
 - **Data Models**: AI reflection fields and storage structure prepared ✅ COMPLETE
 - **Integration Points**: Callback system and error handling framework ready ✅ COMPLETE
 - **Configuration System**: AI preferences and model management ✅ COMPLETE
-- **Service Layer**: Architecture defined, inference engine pending 🔄 95% COMPLETE
+- **Service Layer**: Architecture defined, inference engine pending 🔄 99% COMPLETE
 
 ---
 
@@ -145,7 +147,7 @@ JournalVaultApp ✅
     │   │   ├── FormattingToolbar ✅ (with AI button)
     │   │   ├── TextArea ✅
     │   │   └── AutoSaveStatus ✅
-    │   └── AIReflectionComponent ✅ (Inline, Fully Implemented)
+    │   └── DanaWisdomComponent ✅ (Collapsible, Fully Implemented)
     └── StatusIndicators ✅ (integrated throughout)
 ```
 
@@ -181,24 +183,26 @@ JournalVaultApp ✅
 - **State**: Current step, onboarding data, vault configuration, AI preferences, download status
 - **Events**: Completion callback with comprehensive configuration data including AI setup
 
-#### AIReflectionComponent ✅ FULLY IMPLEMENTED + ENHANCED UX
-- **Purpose**: Inline AI reflection display with advanced user experience
+#### DanaWisdomComponent ✅ FULLY IMPLEMENTED + ENHANCED UX
+- **Purpose**: Warm companion wisdom display with collapsible interface
 - **Location**: Integrated below text editor in main content area
 - **Features**: 
-  - Insights, questions, and themes display from AI analysis
+  - Insights, questions, and themes display with supportive language
+  - Collapsible wisdom cards with smooth animations and eye icon toggle
   - Enhanced regeneration UX with immediate visual feedback
-  - Smart error handling with retry messaging
+  - Smart error handling with encouraging, companion-like messaging
   - Comprehensive loading states and progress indicators
-- **Enhanced UX Implementation**:
-  - **Button State Management**: Loading states, disabled states, visual feedback
-  - **Immediate Feedback**: Button text changes to "Regenerating..." on click
-  - **Progress Indicators**: ProgressRing displayed during AI processing
-  - **Error Recovery**: Specific error messages with retry instructions
-  - **State Transitions**: Smooth transitions between all component states
+- **Companion UX Implementation**:
+  - **Button State Management**: "Reflecting..." states with loading indicators
+  - **Immediate Feedback**: Button instantly shows processing state on click
+  - **Progress Indicators**: ProgressRing with disabled button states
+  - **Error Recovery**: Personalized error messages with encouraging language
+  - **State Transitions**: Smooth animations between all component states
+  - **Space Management**: Text editor expands when wisdom card is hidden
 - **Controls**: 
-  - **Regenerate Button**: Enhanced with loading indicators and state management
-  - **Hide Button**: Clean hide/show functionality
-- **States**: Hidden (default), Generating (with indicators), Displaying reflection, Error handling
+  - **New Reflection Button**: Enhanced with sparkle icon and loading states
+  - **Eye Icon Toggle**: Show/hide wisdom card with smooth animations
+- **States**: Hidden (default), Generating (with indicators), Displaying wisdom, Error handling
 - **Integration**: Seamless callback system with main application for state synchronization
 
 ### Storage Components ✅ FULLY IMPLEMENTED
@@ -505,7 +509,7 @@ The main interface follows an Obsidian-inspired three-panel layout:
 │ │    ✅   │ │ │          ✅                             │  │
 │ └─────────┘ │ └─────────────────────────────────────────┘  │
 │             │ ┌─────────────────────────────────────────┐  │
-│ ┌─────────┐ │ │   AI Reflection Component              │  │
+│ ┌─────────┐ │ │   Dana's Wisdom Component              │  │
 │ │  File   │ │ │    ✅ (Inline, Fully Implemented)      │  │
 │ │Explorer │ │ └─────────────────────────────────────────┘  │
 │ │   ✅    │ │                                               │

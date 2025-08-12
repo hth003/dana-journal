@@ -1,6 +1,6 @@
-# AI Journal Vault
+# DANA - safe journal space
 
-A privacy-first desktop journaling application with local AI-powered insights. Write, reflect, and discover patterns in your thoughts while keeping all data on your device.
+A privacy-first desktop journaling application with warm, companion-like AI insights. Write, reflect, and discover patterns in your thoughts with Dana's supportive guidance while keeping all data on your device.
 
 ![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)
@@ -11,15 +11,17 @@ A privacy-first desktop journaling application with local AI-powered insights. W
 ### Core Functionality (Available Now)
 - **Privacy-First Design**: 100% local operation - all your data stays on your device
 - **Interactive Calendar**: Visual month navigation with entry indicators and date selection
-- **Markdown Editor**: Rich text editing with auto-save functionality
+- **Enhanced Markdown Editor**: Rich text editing with formatting toolbar and auto-save
 - **Smart Organization**: Automatic file organization by date (YYYY/MM/DD structure)
 - **Dual-Mode Setup**: Create new vaults or load existing journal folders
-- **Dark Theme**: Obsidian-inspired interface optimized for focused writing
+- **DANA's Companion Interface**: Warm, supportive dark theme optimized for focused writing
+- **Collapsible Wisdom Cards**: AI-powered insights with enhanced regeneration UX (infrastructure ready)
 
 ### Coming Soon
-- **Pattern Recognition**: Discover themes and insights in your writing
+- **Dana's Wisdom**: AI-powered companion insights with warm, supportive guidance
+- **Pattern Recognition**: Discover themes and emotional patterns in your writing
 - **Advanced Search**: Full-text search across all entries
-- **Enhanced Editor**: Advanced markdown features and formatting tools
+- **Growth Tracking**: Personal reflection and emotional pattern analysis
 
 ## 🚀 Quick Start
 
@@ -52,10 +54,11 @@ A privacy-first desktop journaling application with local AI-powered insights. W
 uv run python -m journal_vault.main
 ```
 
-This will guide you through the 3-step onboarding process:
-1. **Welcome**: Learn about features and privacy principles
+This will guide you through the 4-step onboarding process:
+1. **Welcome**: Learn about DANA's features and privacy principles
 2. **Privacy**: Understand local-only data processing
 3. **Storage**: Choose between creating a new vault or loading an existing one
+4. **AI Setup**: Optional download of AI model for Dana's Wisdom features
 
 #### Reset Onboarding (for testing)
 ```bash
@@ -84,14 +87,17 @@ src/journal_vault/
 ├── config/
 │   └── app_config.py    # Configuration management
 ├── ui/
-│   ├── theme.py         # Dark theme system
+│   ├── theme.py         # Dark theme system with sage accents
 │   └── components/      # Reusable UI components
-│       ├── onboarding.py    # 3-step setup wizard
+│       ├── onboarding.py    # 4-step setup wizard with AI setup
 │       ├── calendar.py      # Interactive calendar
-│       ├── text_editor.py   # Markdown text editor
-│       └── file_explorer.py # File navigation
+│       ├── text_editor.py   # Enhanced markdown text editor
+│       ├── file_explorer.py # File navigation
+│       └── ai_reflection.py # Dana's collapsible wisdom component
 ├── storage/             # File management system
-└── ai/                  # AI integration (planned)
+└── ai/                  # AI integration (99% complete)
+    ├── download_model.py    # AI model download manager
+    └── prompts.py           # Prompt engineering system
 ```
 
 ### Development Commands
@@ -124,11 +130,12 @@ Journal entries are stored as markdown files with YAML frontmatter:
 Your Journal Directory/
 ├── .journal_vault/
 │   ├── config.json          # App settings
-│   ├── index.sqlite         # Entry indexing (planned)
-│   └── ai_cache/            # AI reflection cache (planned)
+│   ├── index.sqlite         # Entry indexing (implemented)
+│   ├── models/              # AI model storage
+│   └── ai_cache/            # AI reflection cache (ready)
 └── entries/
     └── YYYY/MM/
-        └── YYYY-MM-DD.md    # Daily journal entries
+        └── YYYY-MM-DD.md    # Daily journal entries with wisdom data
 ```
 
 #### Entry File Format
@@ -227,13 +234,14 @@ uv run pytest -v
 
 ## 🎨 UI Design
 
-The application features an Obsidian-inspired dark theme with:
+DANA features a warm, companion-like dark theme with:
 
 - **Left Sidebar**: Calendar and file explorer
-- **Main Area**: Markdown text editor  
-- **Color Scheme**: Deep midnight backgrounds with violet accents (#8B5CF6)
-- **Typography**: Clean, readable fonts with proper hierarchy
-- **Responsive Layout**: Adapts to different window sizes
+- **Main Area**: Enhanced markdown text editor with formatting toolbar
+- **Dana's Wisdom**: Collapsible wisdom cards with smooth animations
+- **Color Scheme**: Deep midnight backgrounds with sage green accents (#81B29A)
+- **Typography**: Clean, readable fonts with companion-like language
+- **Responsive Layout**: Space-efficient design that adapts to different window sizes
 
 ## 🤝 Contributing
 
@@ -266,4 +274,4 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 
 ---
 
-**Start your private journaling journey today. Your thoughts, your data, your device.**
+**Start your private journaling journey with Dana today. Your thoughts, your data, your device, your companion.**

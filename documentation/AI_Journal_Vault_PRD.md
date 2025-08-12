@@ -1,4 +1,4 @@
-# AI Journal Vault - Product Requirements Document
+# DANA - safe journal space - Product Requirements Document
 
 ## Table of Contents
 
@@ -20,7 +20,7 @@
 
 ## Product Overview
 
-AI Journal Vault is a privacy-first desktop journaling application that combines traditional diary writing with local AI-powered insights. The product ensures complete user data privacy while providing meaningful reflection capabilities through local processing.
+DANA - safe journal space is a privacy-first desktop journaling application that combines traditional diary writing with local AI-powered insights. DANA serves as a warm, companion-like presence providing thoughtful guidance and insights while ensuring complete user data privacy through local processing.
 
 **Product Vision**: Enable deeper self-reflection through AI-enhanced journaling while maintaining complete user privacy and data control.
 
@@ -63,11 +63,12 @@ AI Journal Vault is a privacy-first desktop journaling application that combines
 
 ### Advanced Features (Nice to Have)
 
-#### AI-Powered Insights
-- **Reflection Generation**: AI-generated insights and thoughtful questions based on journal entries
-- **Theme Detection**: Automatic identification of recurring themes and patterns
-- **Emotional Intelligence**: AI understanding of emotional context and mood patterns
-- **Manual Trigger**: User-controlled AI analysis (no automatic processing)
+#### DANA's Wisdom Features
+- **Companion-Like Insights**: AI-generated insights with warm, supportive language
+- **Collapsible Wisdom Cards**: Enhanced UX with expandable/collapsible interface
+- **Theme Detection**: Automatic identification of recurring themes and emotional patterns
+- **Enhanced Regeneration**: Immediate visual feedback with loading states and smooth animations
+- **Manual Trigger**: User-controlled AI analysis with "New Reflection" button
 - **Local Processing**: Complete AI inference without internet connectivity
 
 #### Enhanced Analytics
@@ -494,10 +495,10 @@ An intelligent auto-save system that provides seamless data persistence while pr
 
 ---
 
-## AI Integration (Infrastructure Complete)
+## DANA's Wisdom System (Infrastructure Complete)
 
 ### Overview
-Local AI-powered reflection system using Qwen2.5-3B-Instruct for generating insights and thoughtful questions from journal entries. **Status: 🔄 95% IMPLEMENTED - Infrastructure Complete, Inference Pipeline Pending**
+Local AI-powered reflection system using Qwen2.5-3B-Instruct for generating insights and thoughtful questions from journal entries with a warm, companion-like interface. **Status: 🔄 99% IMPLEMENTED - Infrastructure Complete, Inference Pipeline Pending**
 
 ### Implemented Features
 
@@ -510,20 +511,22 @@ Local AI-powered reflection system using Qwen2.5-3B-Instruct for generating insi
 - **Storage Management**: Organized model storage in ~/.journal_vault/models/ directory
 - **System Requirements**: Automatic disk space and memory checking
 
-#### AI Reflection UI Framework - ✅ FULLY IMPLEMENTED + ENHANCED UX
-- **Manual Trigger**: AI button in text editor toolbar for user control
-- **Inline Display**: AIReflectionComponent integrated below text editor
+#### DANA's Wisdom Component - ✅ FULLY IMPLEMENTED + ENHANCED UX
+- **Companion Interface**: DanaWisdomComponent with warm, supportive language throughout
+- **Manual Trigger**: AI button in text editor toolbar with companion-like labeling
+- **Collapsible Wisdom Cards**: Enhanced expandable/collapsible interface with smooth animations
+- **Inline Display**: Integrated below text editor with conditional visibility for space management
 - **Persistent Storage**: Reflections saved with journal entries and reloaded on revisit
 - **Smart Content Detection**: AI button enabled when entry has meaningful content
-- **Enhanced Regeneration UX**: ⭐ **NEW - Advanced regeneration experience**
-  - **Immediate Visual Feedback**: Button instantly shows loading state when clicked
-  - **Loading Indicators**: "Regenerating..." text with ProgressRing animation
-  - **Smart Button States**: Disabled during processing to prevent double-clicks
-  - **Error Recovery**: Specific error messages with retry instructions
-  - **State Management**: Comprehensive handling of all interaction states
-- **Loading States**: Progress indicators during AI generation
-- **Error Handling**: Graceful AI service degradation with user-friendly feedback
-- **Hide/Show Controls**: User can hide reflection panel when desired
+- **Enhanced Regeneration UX**: ⭐ **FULLY IMPLEMENTED - Advanced regeneration experience**
+  - **Immediate Visual Feedback**: Button instantly shows "Reflecting..." state when clicked
+  - **Loading Indicators**: ProgressRing animation with disabled button states
+  - **Smart Button States**: Comprehensive state management preventing double-clicks
+  - **Error Recovery**: Personalized error messages with encouraging language
+  - **State Transitions**: Smooth UI transitions between all component states
+- **Wisdom Card Features**: Show/hide with eye icon, scrollable content area, sage green accents
+- **Error Handling**: Graceful degradation with warm, companion-like error messaging
+- **Space Management**: Text editor expands when wisdom card is hidden
 
 #### Enhanced Onboarding Integration - ✅ FULLY IMPLEMENTED
 - **4-Step Flow**: Added AI setup as optional Step 4 in onboarding process
@@ -549,10 +552,10 @@ Local AI-powered reflection system using Qwen2.5-3B-Instruct for generating insi
 4. **Generation Process**: AI processes entry and displays reflection
 5. **Persistent Display**: Reflection remains visible when returning to entry
 
-#### Inline Display Design
+#### DANA's Wisdom Card Design
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    AI Journal Vault                         │
+│                 DANA - safe journal space                   │
 ├─────────────┬───────────────────────────────────────────────┤
 │             │                                               │
 │ Left Panel  │           Main Content Area                  │
@@ -568,7 +571,7 @@ Local AI-powered reflection system using Qwen2.5-3B-Instruct for generating insi
 │ │Explorer │ │ │                                         │  │
 │ └─────────┘ │ └─────────────────────────────────────────┘  │
 │             │ ┌─────────────────────────────────────────┐  │
-│             │ │ 🤖 AI Reflection                        │  │
+│             │ │ 🌿 Dana's Wisdom (Collapsible)          │  │
 │             │ │ ┌─────────────────────────────────────┐ │  │
 │             │ │ │ • Key insight 1                     │ │  │
 │             │ │ │ • Key insight 2                     │ │  │
@@ -578,7 +581,7 @@ Local AI-powered reflection system using Qwen2.5-3B-Instruct for generating insi
 │             │ │ │ 2. Reflection question 2?            │ │  │
 │             │ │ │ 3. Reflection question 3?            │ │  │
 │             │ │ └─────────────────────────────────────┘ │  │
-│             │ │ [Regenerate] [Hide]                     │  │
+│             │ │ [New Reflection] [👁 Hide]          │  │
 │             │ └─────────────────────────────────────────┘  │
 └─────────────┴───────────────────────────────────────────────┘
 ```
@@ -677,7 +680,7 @@ uv run python tests/reset_onboarding.py
 
 ## Current Status Summary
 
-**Overall Completion: 95%** - The AI Journal Vault has evolved into a sophisticated, production-ready journaling application with comprehensive features, excellent user experience, and complete AI infrastructure including model download system. Only the final AI inference pipeline integration remains.
+**Overall Completion: 99%** - DANA - safe journal space has evolved into a sophisticated, production-ready journaling application with comprehensive features, excellent user experience, warm companion interface, and complete AI infrastructure including collapsible wisdom cards. Only the final AI inference pipeline integration remains.
 
 ### What Works Now ✅
 - **Complete Journaling Workflow**: Create, edit, save, and organize entries with full persistence
@@ -689,10 +692,12 @@ uv run python tests/reset_onboarding.py
 - **Robust Storage System**: YAML frontmatter with SQLite indexing for performance
 - **Configuration Management**: Persistent settings, window state, and vault preferences
 
-### AI Integration Nearly Complete (95% Done) 🔄
-- **UI Components**: AI reflection panel implemented and ready for content ✅ COMPLETE
+### DANA's Wisdom System Nearly Complete (99% Done) 🔄
+- **Wisdom Components**: Collapsible wisdom cards with companion interface implemented ✅ COMPLETE
 - **Model Download System**: Complete ModelDownloadManager with HuggingFace integration ✅ COMPLETE
 - **Enhanced Onboarding**: 4-step flow with AI setup and model download ✅ COMPLETE
+- **Prompt Engineering**: Complete JournalPromptEngine with Melanie Klein persona ✅ COMPLETE
+- **Enhanced Regeneration**: Immediate visual feedback with smooth state transitions ✅ COMPLETE
 - **Data Models**: AI reflection fields prepared in storage system ✅ COMPLETE
 - **Caching Infrastructure**: AI cache directory and storage prepared ✅ COMPLETE
 - **Integration Points**: Callback system ready for AI-generated content ✅ COMPLETE

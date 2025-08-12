@@ -270,7 +270,7 @@ class DanaWisdomComponent:
             controls.append(
                 ThemedText(
                     self.theme_manager,
-                    "🌿 Gentle themes:",  # More nurturing language
+                    "🌿 Themes:",  # More nurturing language
                     variant="muted",
                     typography="caption"
                 )

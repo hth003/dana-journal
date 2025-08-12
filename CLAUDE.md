@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is AI Journal Vault, a privacy-first desktop journaling application built with Python and Flet. The app provides local AI-powered insights while keeping all user data on their device.
+This is DANA - safe journal space, a privacy-first desktop journaling application built with Python and Flet with a warm, companion-like interface. The app provides local AI-powered insights through collapsible wisdom cards while keeping all user data on their device.
 
 ## Development Commands
 
@@ -56,14 +56,15 @@ src/journal_vault/
 │       ├── calendar.py        # Interactive calendar with entry indicators
 │       ├── text_editor.py     # Enhanced markdown text editor
 │       ├── file_explorer.py   # File navigation component
-│       └── ai_reflection.py   # AI reflection display component
+│       └── ai_reflection.py   # Dana's collapsible wisdom component
 ├── storage/
 │   ├── file_manager.py        # Complete file I/O with SQLite indexing
 │   ├── auto_save.py           # Auto-save functionality
 │   └── integration.py         # Storage integration layer
 └── ai/
     ├── __init__.py            # AI module initialization
-    └── download_model.py      # AI model download manager
+    ├── download_model.py      # AI model download manager
+    └── prompts.py             # Complete prompt engineering system
 ```
 
 ### Key Components
@@ -84,7 +85,7 @@ src/journal_vault/
 
 **Calendar Component (ui/components/calendar.py)**: Interactive month navigation with entry indicators, date selection, and "Today" button. Integrates with journal entry system.
 
-**AI Reflection Component (ui/components/ai_reflection.py)**: Inline component for displaying AI-generated insights, questions, and themes with manual trigger support and persistent display.
+**Dana's Wisdom Component (ui/components/ai_reflection.py)**: Collapsible companion wisdom component for displaying AI-generated insights, questions, and themes with enhanced regeneration UX, smooth animations, and persistent display.
 
 **File Manager (storage/file_manager.py)**: Complete file management system with SQLite indexing, YAML frontmatter parsing, entry CRUD operations, search capabilities, and vault validation.
 
@@ -118,15 +119,16 @@ The application follows an Obsidian-inspired design:
 ## Development Status
 
 ### Implemented ✅
-- Complete Flet-based application structure
-- Dark theme system with reusable components  
+- Complete Flet-based application structure with DANA companion interface
+- Dark theme system with reusable components and sage green accents
 - Interactive calendar with navigation and entry indicators
 - **Enhanced 4-step onboarding** with dual-mode vault setup and AI configuration
 - **Smart vault detection** for existing journal folders
 - **Real-time path preview** with proper macOS folder selection
 - Configuration persistence system with vault metadata
 - **Complete file manager with SQLite indexing** for fast entry lookup
-- **AI reflection component** with inline display and manual triggers
+- **Collapsible wisdom cards** with enhanced regeneration UX and smooth animations
+- **Complete AI prompt engineering system** with Melanie Klein persona
 - **AI model download manager** with progress tracking and validation
 - **Enhanced markdown text editor** with formatting toolbar
 - **Auto-save functionality** with configurable delay
@@ -134,21 +136,22 @@ The application follows an Obsidian-inspired design:
 - **Entry search and filtering** capabilities
 - **Vault validation and integrity checking**
 - **Delete confirmation UI** with platform-appropriate dialogs
-- Comprehensive error handling and user feedback
+- Comprehensive error handling and user feedback with companion-like messaging
 
 ### In Progress 🔄
-- **AI inference integration** - Model downloading implemented, inference pipeline pending
+- **AI inference integration** - Complete infrastructure ready, inference pipeline pending (99% complete)
 - **Cross-platform packaging** for distribution
 - **Advanced search features** with full-text indexing
 - **Data export/import** functionality
 
 ### Planned ❌
-- **Advanced AI features**: Theme detection, mood tracking, writing suggestions
+- **Enhanced AI features**: Multi-entry theme analysis, mood pattern tracking
 - **Plugin system** for extensibility
 - **Sync capabilities** for backup and sharing
 - **Rich text editor** with WYSIWYG features
 - **Data visualization** of writing patterns and trends
 - **Mobile companion app** integration
+- **Advanced wisdom features**: Personalized insights, growth tracking
 
 ## Important Implementation Details
 
