@@ -1,0 +1,22 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dana Logo: Abstract overlapping journal pages -->
+  <!-- Using Dana's color palette: terracotta #E07A5F and sage green #81B29A -->
+  <!-- Transparent background for clean app icon -->
+  
+  <!-- First journal page (terracotta) -->
+  <rect x="140" y="180" width="180" height="220" rx="12" ry="12" 
+        fill="#E07A5F" opacity="0.9" transform="rotate(-8 230 290)"/>
+  
+  <!-- Second journal page (sage green accent) -->
+  <rect x="192" y="160" width="180" height="220" rx="12" ry="12" 
+        fill="#81B29A" opacity="0.8" transform="rotate(8 282 270)"/>
+  
+  <!-- Third page (subtle cream overlay for depth) -->
+  <rect x="166" y="170" width="180" height="220" rx="12" ry="12" 
+        fill="#F5F2ED" opacity="0.9" transform="rotate(0 256 280)"/>
+  
+  <!-- Subtle binding lines to suggest journal -->
+  <line x1="166" y1="210" x2="346" y2="210" stroke="#E07A5F" stroke-width="2" opacity="0.3"/>
+  <line x1="166" y1="240" x2="346" y2="240" stroke="#E07A5F" stroke-width="2" opacity="0.3"/>
+  <line x1="166" y1="270" x2="346" y2="270" stroke="#E07A5F" stroke-width="2" opacity="0.3"/>
+</svg>

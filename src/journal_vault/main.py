@@ -83,7 +83,8 @@ class JournalVaultApp:
 
     def _setup_page(self) -> None:
         """Configure page properties and theme."""
-        self.page.title = "Dana - safe journal space"
+        self.page.title = "Dana"
+        
         # Apply saved window state
         window_state = app_config.get_window_state()
         self.page.window.width = window_state.get("width", 1400)
@@ -221,27 +222,6 @@ class JournalVaultApp:
         """Create the main three-panel layout with Obsidian-like design."""
         colors = self.theme_manager.colors
 
-        # Minimal header with reduced visual weight
-        header = ThemedContainer(
-            self.theme_manager,
-            variant="surface",
-            elevation="none",
-            content=ft.Row(
-                controls=[
-                    ThemedText(
-                        self.theme_manager,
-                        "Dana - safe journal space",
-                        variant="primary",
-                        typography="h4",  # Reduced from h3 to h4
-                    ),
-                    ft.Container(),  # Empty container for spacing
-                ],
-                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                vertical_alignment=ft.CrossAxisAlignment.CENTER,
-            ),
-            spacing="md",  # Reduced from lg to md
-            # Removed bottom border for cleaner look
-        )
 
         # Initialize file manager if not already done
         if not self.file_manager:
@@ -389,15 +369,8 @@ class JournalVaultApp:
             expand=True,
         )
 
-        # Main layout with left sidebar and main content
-        main_layout = ft.Column(
-            controls=[
-                header,
-                ft.Row(controls=[left_sidebar, main_content], spacing=0, expand=True),
-            ],
-            spacing=0,
-            expand=True,
-        )
+        # Main layout with left sidebar and main content (header removed for more writing space)
+        main_layout = ft.Row(controls=[left_sidebar, main_content], spacing=0, expand=True)
 
         self.page.add(main_layout)
 
@@ -1054,4 +1027,20 @@ def main(page: ft.Page) -> None:
 
 
 if __name__ == "__main__":
-    ft.app(target=main)
+    # Configure Flet app with custom Dana branding
+    import os
+    
+    # Get assets directory path
+    assets_dir = os.path.join(os.path.dirname(__file__), "..", "..", "assets")
+    assets_dir = os.path.abspath(assets_dir)
+    
+    print("🚀 Starting Dana")
+    print(f"📁 Assets directory: {assets_dir}")
+    
+    # Run with custom configuration for Dana branding
+    ft.app(
+        target=main,
+        name="Dana",  # App name for system identification
+        assets_dir=assets_dir,  # Assets directory for icons and resources
+        view=ft.AppView.FLET_APP,  # Use native app view (not web view)
+    )
