@@ -204,12 +204,12 @@ class EnhancedTextEditor:
         """Create formatting toolbar."""
         colors = self.theme_manager.colors
         
-        def create_format_button(icon: str, tooltip: str, on_click: Callable) -> ft.IconButton:
+        def create_format_button(icon: str, tooltip: str, on_click: Callable, icon_color: str = None) -> ft.IconButton:
             return ft.IconButton(
                 icon=icon,
                 tooltip=tooltip,
                 icon_size=COMPONENT_SIZES["icon_sm"],
-                icon_color=colors.text_muted,
+                icon_color=icon_color or colors.text_muted,
                 on_click=on_click,
                 style=ft.ButtonStyle(
                     shape=ft.RoundedRectangleBorder(radius=6),
@@ -271,9 +271,10 @@ class EnhancedTextEditor:
                 
                 # AI Button (NEW)
                 create_format_button(
-                    ft.Icons.PSYCHOLOGY,  # or ft.Icons.LIGHTBULB
-                    "Generate AI Reflection",
-                    lambda _: self._on_ai_button_clicked()
+                    ft.Icons.NATURE_PEOPLE,  # Same icon as Dana's Wisdom
+                    "Request Dana's Wisdom",
+                    lambda _: self._on_ai_button_clicked(),
+                    colors.accent  # Sage green accent color
                 ),
                 
                 # Spacer
