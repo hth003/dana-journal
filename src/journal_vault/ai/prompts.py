@@ -185,11 +185,35 @@ JSON Response:"""
 
         try:
             # Extract JSON from response
-            json_match = re.search(r"\{.*\}", response, re.DOTALL)
+            # Clean response by removing empty JSON objects and extra whitespace
+            cleaned_response = response.strip()
+            # Remove empty JSON objects at the start or anywhere in the response
+            cleaned_response = re.sub(r'\{\s*\}\s*\n?', '', cleaned_response, flags=re.MULTILINE)
+            # Also remove the specific "JSON Response:" prefix if it exists
+            cleaned_response = re.sub(r'JSON Response:\s*\{\s*\}\s*', '', cleaned_response, flags=re.MULTILINE)
+            
+            # Try multiple JSON extraction patterns
+            json_patterns = [
+                r"(\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})",  # Nested JSON pattern
+                r"\{.*\}",  # Original pattern
+                r"```json\s*(\{.*?\})\s*```",  # JSON in code blocks
+                r"```\s*(\{.*?\})\s*```",  # JSON in any code blocks
+                r"(\{[\s\S]*?\})",  # More permissive JSON
+            ]
+            
+            json_match = None
+            for pattern in json_patterns:
+                json_match = re.search(pattern, cleaned_response, re.DOTALL)
+                if json_match:
+                    break
+            
             if not json_match:
                 return self._create_fallback_response(response)
 
-            json_str = json_match.group()
+            # Extract JSON string (use group(1) if capture group exists, otherwise group())
+            json_str = json_match.group(1) if json_match.groups() else json_match.group()
+            
+            # Try to parse the JSON
             data = json.loads(json_str)
 
             # Validate required fields

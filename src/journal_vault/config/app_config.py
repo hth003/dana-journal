@@ -117,7 +117,7 @@ class AppConfig:
                 "max_tokens": 512,
                 "cache_enabled": True,
                 "cache_expiry_hours": 168,  # 1 week
-                "auto_load_model": False,
+                "auto_load_model": True,
             },
         )
 

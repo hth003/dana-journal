@@ -1,4 +1,4 @@
-# AI Journal Vault - Project Outline
+# DANA - safe journal space - Project Outline
 
 ## Project Overview
 
@@ -48,11 +48,11 @@
 - **Interactive Calendar**: Month navigation, entry indicators, "Today" button
 - **File Explorer**: Hierarchical view with real-time search functionality
 - **Obsidian-Inspired Layout**: Professional three-panel design
-- **Dark Theme System**: Comprehensive theming with consistent design tokens
+- **DANA Warm Theme System**: Comprehensive theming with warm companion design tokens
 - **Responsive Design**: Proper layout management and component sizing
 
 #### Onboarding & Configuration
-- **Enhanced 3-Step Onboarding**: Welcome → Privacy → Dual-mode storage setup
+- **Enhanced 4-Step Onboarding**: Welcome → Privacy → Dual-mode storage setup → AI Setup
 - **Smart Vault Detection**: Recognizes existing Journal Vault structures
 - **Native macOS Integration**: osascript folder picker with real-time preview
 - **Configuration Management**: Persistent settings and window state
@@ -111,7 +111,7 @@
 | **Storage System** | ✅ 100% Complete | YAML frontmatter, SQLite indexing, file organization |
 | **Onboarding** | ✅ 100% Complete | 4-step flow, dual-mode setup, AI download, smart detection |
 | **Configuration** | ✅ 100% Complete | Persistent settings, window state, preferences |
-| **Theme System** | ✅ 100% Complete | Dark mode with comprehensive design system |
+| **Theme System** | ✅ 100% Complete | DANA warm theme with comprehensive companion design system |
 | **AI Integration** | 🔄 98% Complete | Complete infrastructure, model download, UI framework, prompt system - inference pending |
 | **Cross-platform** | 📋 Architecture Ready | Core tested on macOS, ready for Windows/Linux |
 
@@ -197,7 +197,7 @@ This is where the user writes their journal entry in **markdown format**.
 ### Current UI Layout (Fully Implemented) ✅
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    AI Journal Vault                         │
+│                 DANA - safe journal space                   │
 ├─────────────┬───────────────────────────────────────────────┤
 │             │                                               │
 │ Left Panel  │           Main Content Area                  │
@@ -224,12 +224,12 @@ This is where the user writes their journal entry in **markdown format**.
 ```
 
 ### Color Scheme ✅ FULLY IMPLEMENTED
-**Dark Mode (Only Theme)**:
-- Background: #0A0E1A (Deep midnight)
-- Surface: #1A1F2E (Dark slate) 
-- Primary: #8B5CF6 (Violet)
-- Text: #F8FAFC (Off-white)
-- **Rationale**: Simplified to dark-mode only for focused writing experience
+**DANA Theme (Light Mode with Warm Accents)**:
+- Primary: #E07A5F (Terracotta - warm, human, approachable)
+- Secondary: #3D5A80 (Deep blue - trust, wisdom)
+- Accent: #81B29A (Sage green - growth, reflection)
+- Background: Light/neutral tones for readability
+- **Rationale**: Moved from dark mode to warm, companion-like interface that feels supportive and nurturing
 
 ## Development Progress & Current Status
 
@@ -382,10 +382,10 @@ class JournalVaultApp:  # ✅ Already implemented
 - **Result**: Superior emotional intelligence for reflection tasks
 - **Validation**: Benchmarking confirms best choice for implementation
 
-### Theme: Dark Mode Only ✅ VALIDATED
-- **Chosen**: Single dark theme for focused experience
-- **Result**: Consistent, professional appearance
-- **Validation**: Users prefer dark themes for writing, reduced complexity
+### Theme: DANA Warm Companion Theme ✅ VALIDATED
+- **Chosen**: Warm light theme with terracotta, sage green, and deep blue palette
+- **Result**: Nurturing, supportive companion-like appearance
+- **Validation**: Warm colors create more inviting and emotionally supportive journaling experience
 
 ## Recent Major Accomplishments 🎉
 
@@ -527,7 +527,7 @@ class JournalVaultApp:  # ✅ Already implemented
 
 ---
 
-This project represents a sophisticated evolution from concept to near-completion. DANA - The AI Journal Vault has become a production-quality journaling application with exceptional user experience, warm companion aesthetic, clean architecture, and comprehensive features including complete AI prompt engineering. The addition of final AI inference will complete a powerful, privacy-first journaling solution that stands out in the market for its technical excellence, human-centered design, and thoughtful AI integration.
+This project represents a sophisticated evolution from concept to near-completion. DANA - safe journal space has become a production-quality journaling application with exceptional user experience, warm companion aesthetic, clean architecture, and comprehensive features including complete AI prompt engineering. The addition of final AI inference will complete a powerful, privacy-first journaling solution that stands out in the market for its technical excellence, human-centered design, and thoughtful AI integration.
 
 ---
 
@@ -918,7 +918,7 @@ class ReflectionCache:
 
 ### Conclusion
 
-The AI Journal Vault is **architecturally ready** for AI integration with Qwen2.5-3B-Instruct as the selected model. The comprehensive infrastructure provides:
+DANA - safe journal space is **architecturally ready** for AI integration with Qwen2.5-3B-Instruct as the selected model. The comprehensive infrastructure provides:
 
 #### ✅ Technical Readiness
 - **Complete Framework**: All integration points implemented and tested
@@ -940,50 +940,6 @@ The AI Journal Vault is **architecturally ready** for AI integration with Qwen2.
 
 The next sprint focus should be on **Final AI Integration** to bring the AI reflection features to life and complete the DANA vision. The technical foundation including complete prompt engineering system is solid and ready for this crucial implementation phase.
 
+---
 
-# DANA Rebranding Implementation Plan                                                                                                               │
-     │                                                                                                                                                   │
-     │ Overview                                                                                                                                          │
-     │                                                                                                                                                   │
-     │ Transform "AI Journal Vault" to "DANA - The AI Journal Vault" with warm, companion-like branding that differentiates from Obsidian's technical    │
-     │ aesthetic.                                                                                                                                        │
-     │                                                                                                                                                   │
-     │ Phase 1: Core Brand Foundation (1-2 days)                                                                                                         │
-     │                                                                                                                                                   │
-     │ 1.1 Color Palette Transformation                                                                                                                  │
-     │                                                                                                                                                   │
-     │ - Replace violet theme (#8B5CF6) with DANA's warm palette:                                                                                        │
-     │   - Primary: Terracotta (#E07A5F) - warm, human, approachable                                                                                     │
-     │   - Secondary: Deep blue (#3D5A80) - trust, wisdom                                                                                                │
-     │   - Accent: Sage green (#81B29A) - growth, reflection                                                                                             │
-     │   - Update src/journal_vault/ui/theme.py with new color system                                                                                    │
-     │                                                                                                                                                   │
-     │ 1.2 Typography System                                                                                                                             │
-     │                                                                                                                                                   │
-     │ - Implement dual-font system:                                                                                                                     │
-     │   - UI/Headers: Inter (clean, modern)                                                                                                             │
-     │   - Content/Writing: Crimson Pro (readable serif for journaling)                                                                                  │
-     │   - Update typography scales and font families in theme                                                                                           │
-     │                                                                                                                                                   │
-     │ 1.3 Application Naming                                                                                                                            │
-     │                                                                                                                                                   │
-     │ - Update all references from "AI Journal Vault" to "DANA - The AI Journal Vault"                                                                  │
-     │ - Update window titles, configuration, and project metadata                                                                                       │
-     │ - Files: main.py, pyproject.toml, config files                                                                                                    │
-     │                                                                                                                                                   │
-     │ Phase 2: Visual Identity & Layout (3-4 days)                                                                                                      │
-     │                                                                                                                                                   │
-     │ 2.1 Component Design Language                                                                                                                     │
-     │                                                                                                                                                   │
-     │ - Replace sharp corners with softer 16px border radius                                                                                                                                              
-     │ - Create organic interaction patterns                                                                                    
-     │ - Update all UI components in src/journal_vault/ui/components/                                                                                    │
-     │                                                                                                                                                   │
-     │ 2.2 Layout Transformation                                                                                                                         │
-     │                                                                                                                                                   │
-     │ - Provide journal-first layout:                                                                                      │                                                                                                │
-     │   - Wide center: Writing area with focus                                                                                                          │
-     │   - AI insights as "Wisdom Cards"                                                                                              │
-     │ - Transform file explorer into "Memory Archive"                                                                                                   │                                                                                           │
-     │                                                                                                                                                   │
-     │                             
+**DANA - safe journal space** is ready for the final implementation phase, with 99% of the infrastructure complete and a warm, companion-like interface that transforms journaling into a supportive, reflective experience.

@@ -24,7 +24,7 @@ class AIServiceConfig:
 
     cache_enabled: bool = True
     cache_expiry_hours: int = 24 * 7  # Cache reflections for a week
-    auto_load_model: bool = False  # Load model automatically on startup
+    auto_load_model: bool = True  # Load model automatically on startup
     inference_config: Optional[InferenceConfig] = None
     prompt_config: Optional[ReflectionPromptConfig] = None
 
@@ -105,6 +105,13 @@ class AIReflectionService:
         """Check if the AI model is currently loaded in memory."""
         return (
             self.inference_engine is not None and self.inference_engine.is_model_loaded
+        )
+
+    @property
+    def is_loading(self) -> bool:
+        """Check if the AI model is currently being loaded."""
+        return (
+            self.inference_engine is not None and self.inference_engine.is_loading
         )
 
     @property
@@ -189,6 +196,33 @@ class AIReflectionService:
                 error="AI service not available",
             )
 
+        # Wait for model to load if it's currently loading
+        if self.is_loading:
+            if progress_callback:
+                progress_callback("Loading AI model...")
+            
+            # Wait for model loading to complete
+            import time as time_module
+            max_wait_time = 60  # Maximum 60 seconds wait
+            wait_start = time_module.time()
+            
+            while self.is_loading and (time_module.time() - wait_start) < max_wait_time:
+                time_module.sleep(1)
+                if progress_callback:
+                    progress_callback("Loading AI model...")
+            
+            # If still loading after timeout, show error
+            if self.is_loading:
+                return ReflectionResult(
+                    insights=["AI model is taking longer than expected to load."],
+                    questions=["What thoughts come to mind when you read this entry?"],
+                    themes=["reflection"],
+                    generated_at=datetime.now().isoformat(),
+                    generation_time=time.time() - start_time,
+                    model_used="none",
+                    error="Model loading timeout",
+                )
+
         # Load model if needed
         if not self.ensure_model_loaded():
             return ReflectionResult(
@@ -242,9 +276,8 @@ class AIReflectionService:
                 )
 
             # Parse response
-            parsed_response = self.prompt_engine.parse_reflection_response(
-                inference_result.get("text", "")
-            )
+            raw_text = inference_result.get("text", "")
+            parsed_response = self.prompt_engine.parse_reflection_response(raw_text)
 
             if not parsed_response.get("success", False):
                 return ReflectionResult(

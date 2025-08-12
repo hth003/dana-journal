@@ -187,7 +187,7 @@ class JournalVaultApp:
             ai_config = AIServiceConfig(
                 cache_enabled=ai_inference_settings.get("cache_enabled", True),
                 cache_expiry_hours=ai_inference_settings.get("cache_expiry_hours", 168),
-                auto_load_model=ai_inference_settings.get("auto_load_model", False),
+                auto_load_model=ai_inference_settings.get("auto_load_model", True),
             )
 
             # Initialize service
@@ -677,10 +677,20 @@ class JournalVaultApp:
                 self.ai_reflection_component._set_regenerate_button_loading(False)
                 return
 
+            # Check if model is currently loading
+            if self.ai_service.is_loading:
+                # Show model loading state instead of generating state
+                self.ai_reflection_component.show_model_loading_state()
+                # The service will wait for loading to complete, so we can proceed normally
+
             # Progress callback to update UI
             def update_progress(message: str):
-                # Update the generating state with progress message
-                if hasattr(self.ai_reflection_component, "update_generating_status"):
+                # Update the UI based on the message type
+                if "Loading AI model" in message:
+                    self.ai_reflection_component.show_model_loading_state()
+                elif "Generating" in message or "Processing" in message:
+                    self.ai_reflection_component.show_generating_state()
+                elif hasattr(self.ai_reflection_component, "update_generating_status"):
                     self.ai_reflection_component.update_generating_status(message)
 
             # Generate reflection using AI service

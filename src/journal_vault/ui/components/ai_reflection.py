@@ -188,12 +188,38 @@ class DanaWisdomComponent:
                         variant="secondary"
                     )
                 ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=SPACING["sm"]
+            )
+        ]
+        
+        self.container.visible = True
+        self.container.update()
+    
+    def show_model_loading_state(self) -> None:
+        """Show model loading state."""
+        self.content_area.controls = [
+            ft.Row(
+                controls=[
+                    ft.ProgressRing(
+                        width=20,
+                        height=20,
+                        stroke_width=2,
+                        color=self.theme_manager.colors.primary
+                    ),
+                    ThemedText(
+                        self.theme_manager,
+                        "Loading AI model... This may take a moment.",
+                        variant="secondary"
+                    )
+                ],
                 spacing=SPACING["sm"],
                 alignment=ft.MainAxisAlignment.START
             )
         ]
+        
         self.container.visible = True
-        # Auto-expand when generating
+        # Auto-expand when loading model
         if not self.is_expanded:
             self._toggle_expand()
         else:

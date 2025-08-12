@@ -66,6 +66,30 @@ class AIInferenceEngine:
             return self._model is not None
 
     @property
+    def is_loading(self) -> bool:
+        """Check if model is currently being loaded."""
+        with self._lock:
+            return self._loading
+
+    def validate_model_health(self) -> bool:
+        """Validate that the model is healthy and ready for inference."""
+        with self._lock:
+            if self._model is None:
+                return False
+            
+            # Check if the model object is still valid
+            try:
+                # Simple validation - check if model has expected attributes
+                if not hasattr(self._model, '__call__'):
+                    self._model = None
+                    return False
+                return True
+            except Exception:
+                # If any exception occurs, consider model unhealthy
+                self._model = None
+                return False
+
+    @property
     def model_exists(self) -> bool:
         """Check if model file exists."""
         return self.model_path.exists() and self.model_path.is_file()
@@ -187,6 +211,7 @@ class AIInferenceEngine:
         Returns:
             Dict containing 'text', 'tokens_generated', 'generation_time'
         """
+        # Check if model is loaded (don't validate health unless there's an issue)
         if not self.is_model_loaded:
             if not self.load_model():
                 return {
@@ -268,6 +293,13 @@ class AIInferenceEngine:
 
         except Exception as e:
             generation_time = time.time() - start_time
+            
+            # If generation fails, validate model health and try recovery
+            if not self.validate_model_health():
+                if self.load_model():
+                    # Could retry generation here, but for now just return error
+                    pass
+            
             return {
                 "text": "",
                 "tokens_generated": 0,
