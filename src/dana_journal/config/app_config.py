@@ -6,6 +6,7 @@ and other application configuration data.
 """
 
 import json
+import shutil
 from typing import Dict, Any, Optional
 from pathlib import Path
 
@@ -14,15 +15,33 @@ class AppConfig:
     """Manages application configuration and preferences."""
 
     def __init__(self):
-        self.config_dir = Path.home() / ".journal_vault"
+        self.old_config_dir = Path.home() / ".journal_vault"
+        self.config_dir = Path.home() / ".dana_journal"
         self.config_file = self.config_dir / "config.json"
         self._config_data = {}
+
+        # Handle migration from old directory
+        self._migrate_config_if_needed()
 
         # Ensure config directory exists
         self.config_dir.mkdir(exist_ok=True)
 
         # Load existing config
         self._load_config()
+
+    def _migrate_config_if_needed(self) -> None:
+        """Migrate configuration from old .journal_vault directory to .dana_journal."""
+        if self.old_config_dir.exists() and not self.config_dir.exists():
+            try:
+                # Copy entire directory to new location
+                shutil.copytree(self.old_config_dir, self.config_dir)
+                print(
+                    f"Migrated configuration from {self.old_config_dir} to {self.config_dir}"
+                )
+            except Exception as e:
+                print(f"Error migrating config: {e}")
+                # Create new config directory if migration fails
+                self.config_dir.mkdir(exist_ok=True)
 
     def _load_config(self) -> None:
         """Load configuration from file."""

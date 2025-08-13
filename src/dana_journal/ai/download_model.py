@@ -2,7 +2,7 @@
 AI Model Download Manager
 
 Handles downloading and managing the Qwen2.5-3B-Instruct model for local AI insights.
-Uses huggingface-hub to download GGUF models to ~/.journal_vault/models/ directory.
+Uses huggingface-hub to download GGUF models to ~/.dana_journal/models/ directory.
 """
 
 import sys
@@ -45,7 +45,7 @@ class ModelDownloadManager:
     EXPECTED_HASH = None  # We'll validate by size and basic integrity checks
 
     def __init__(self):
-        self.models_dir = Path.home() / ".journal_vault" / "models"
+        self.models_dir = Path.home() / ".dana_journal" / "models"
         self.model_path = self.models_dir / self.MODEL_FILENAME
         self.temp_path = self.models_dir / f"{self.MODEL_FILENAME}.tmp"
         self.progress = DownloadProgress()

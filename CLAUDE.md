@@ -10,7 +10,7 @@ This is DANA - safe journal space, a privacy-first desktop journaling applicatio
 
 ### Running the Application
 ```bash
-uv run python -m journal_vault.main
+uv run python -m dana_journal.main
 ```
 
 ### Development Setup
@@ -45,7 +45,7 @@ uv run python tests/reset_onboarding.py
 
 ### Core Structure
 ```
-src/journal_vault/
+src/dana_journal/
 ├── main.py              # Main application entry point with JournalVaultApp class
 ├── config/
 │   └── app_config.py    # Configuration management and persistence
@@ -103,14 +103,14 @@ assets/
 
 **AI Reflection Service (ai/service.py)**: Orchestrates the complete AI pipeline, combining inference, prompt engineering, and caching to provide journal reflection capabilities with warm, companion-like insights.
 
-**Configuration (config/app_config.py)**: Persistent settings stored in `~/.journal_vault/config.json` including onboarding status, storage path, window state, and AI configuration.
+**Configuration (config/app_config.py)**: Persistent settings stored in `~/.dana_journal/config.json` including onboarding status, storage path, window state, and AI configuration.
 
 ### Data Storage Format
 
 Journal entries are stored as markdown files with YAML frontmatter:
 ```
 User's Journal Directory/
-├── .journal_vault/
+├── .dana_journal/
 │   ├── config.json          # App settings
 │   ├── index.sqlite         # Entry indexing database
 │   └── ai_cache/            # AI reflection cache
@@ -192,7 +192,7 @@ Uses focused dependencies managed by `uv` (requires Python 3.11+):
 - `ruff>=0.12.7` - Fast Python linter
 
 ### Configuration Management
-Settings are automatically persisted to `~/.journal_vault/config.json`. Key settings include:
+Settings are automatically persisted to `~/.dana_journal/config.json`. Key settings include:
 - `onboarded`: Boolean tracking completion of setup
 - `storage_path`: User-selected journal storage directory
 - `vault_name`: User-defined vault name
