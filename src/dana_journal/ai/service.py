@@ -63,9 +63,28 @@ class AIReflectionService:
         self._service_ready = False
         self._initialization_error: Optional[str] = None
 
-        # Initialize inference engine if model exists
+        # Initialize inference engine if model exists (with retry for file system race conditions)
         if self.model_manager.is_model_available():
             self._initialize_inference_engine()
+        elif self._should_retry_model_check():
+            # Sometimes file validation can fail on first try due to file system timing
+            import time
+            time.sleep(0.1)  # Brief pause to allow file system to settle
+            if self.model_manager.is_model_available():
+                self._initialize_inference_engine()
+
+    def _should_retry_model_check(self) -> bool:
+        """Check if we should retry model validation."""
+        # Only retry if the model file exists but validation failed
+        try:
+            from ..config import app_config
+            return (
+                app_config.is_ai_model_downloaded() and  # Config says it's downloaded
+                self.model_manager.model_path.exists()   # File exists on disk
+            )
+        except ImportError:
+            # If we can't import config, just check if file exists
+            return self.model_manager.model_path.exists()
 
     def _initialize_inference_engine(self) -> bool:
         """Initialize the inference engine with the downloaded model."""
@@ -124,10 +143,13 @@ class AIReflectionService:
             "is_available": self.is_available,
             "model_downloaded": self.model_manager.is_model_available(),
             "model_loaded": self.is_model_loaded,
+            "is_loading": self.is_loading,
             "initialization_error": self._initialization_error,
             "model_info": model_info,
             "cache_enabled": self.config.cache_enabled,
             "cache_dir": str(self.cache_dir),
+            "model_path": str(self.model_manager.model_path),
+            "model_exists": self.model_manager.model_path.exists(),
         }
 
     def ensure_model_loaded(self) -> bool:
@@ -139,6 +161,12 @@ class AIReflectionService:
             return self.inference_engine.load_model()
 
         return True
+
+    def retry_initialization(self) -> bool:
+        """Manually retry AI service initialization if it failed initially."""
+        if not self.is_available and self.model_manager.is_model_available():
+            return self._initialize_inference_engine()
+        return self.is_available
 
     async def generate_reflection(
         self,
@@ -180,6 +208,7 @@ class AIReflectionService:
             cached_result = self._get_cached_reflection(content, entry_date)
             if cached_result:
                 cached_result.cached = True
+                cached_result.generation_time = time.time() - start_time  # Update with cache retrieval time
                 return cached_result
 
         # Ensure AI service is ready
@@ -256,7 +285,7 @@ class AIReflectionService:
             inference_result = await self.inference_engine.generate_text_async(
                 prompt=prompt,
                 progress_callback=lambda text: (
-                    progress_callback("Processing AI response...")
+                    progress_callback(f"Processing AI response... ({len(text)} chars)")
                     if progress_callback
                     else None
                 ),
@@ -401,6 +430,50 @@ class AIReflectionService:
             "cache_size_bytes": total_size,
             "cache_dir": str(self.cache_dir),
         }
+
+    def diagnose_and_repair(self) -> Dict[str, Any]:
+        """Diagnose AI service issues and attempt automatic repair."""
+        diagnosis = {
+            "issues_found": [],
+            "repairs_attempted": [],
+            "repair_success": True,
+            "final_status": "unknown"
+        }
+
+        # Check model file integrity
+        if not self.model_manager.is_model_available():
+            diagnosis["issues_found"].append("Model file not available or corrupted")
+            # Could attempt to re-download here in future
+        
+        # Check if inference engine needs reinitialization
+        if not self.is_available and self.model_manager.is_model_available():
+            diagnosis["issues_found"].append("Model available but inference engine not ready")
+            diagnosis["repairs_attempted"].append("Attempting to reinitialize inference engine")
+            try:
+                if self._initialize_inference_engine():
+                    diagnosis["repairs_attempted"].append("✅ Inference engine reinitialized successfully")
+                else:
+                    diagnosis["repairs_attempted"].append("❌ Failed to reinitialize inference engine")
+                    diagnosis["repair_success"] = False
+            except Exception as e:
+                diagnosis["repairs_attempted"].append(f"❌ Error during reinitialization: {str(e)}")
+                diagnosis["repair_success"] = False
+
+        # Check cache directory
+        if self.config.cache_enabled and not self.cache_dir.exists():
+            diagnosis["issues_found"].append("Cache directory missing")
+            diagnosis["repairs_attempted"].append("Attempting to recreate cache directory")
+            try:
+                self.cache_dir.mkdir(parents=True, exist_ok=True)
+                diagnosis["repairs_attempted"].append("✅ Cache directory recreated")
+            except Exception as e:
+                diagnosis["repairs_attempted"].append(f"❌ Failed to create cache directory: {str(e)}")
+                diagnosis["repair_success"] = False
+
+        # Final status check
+        diagnosis["final_status"] = "available" if self.is_available else "unavailable"
+        
+        return diagnosis
 
     def unload_model(self) -> None:
         """Unload AI model to free memory."""

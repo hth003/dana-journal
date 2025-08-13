@@ -153,7 +153,7 @@ class OnboardingFlow:
                 ),
                 ThemedText(
                     self.theme_manager,
-                    "Welcome to Dana - safe journal space",
+                    "Welcome to Dana",
                     variant="primary",
                     size=32,
                     weight=ft.FontWeight.BOLD,
@@ -915,21 +915,32 @@ class OnboardingFlow:
                         alignment=ft.MainAxisAlignment.CENTER,
                     ),
                     ft.Container(height=12),
-                    self.download_progress_bar,
+                    # Center the progress bar within the container
+                    ft.Row(
+                        [self.download_progress_bar],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                    ),
                     ft.Container(height=8),
                     self.download_status_text,
                     ft.Container(height=16),
-                    ft.TextButton(
-                        text="Cancel Download",
-                        icon=ft.Icons.CANCEL,
-                        on_click=self._cancel_ai_download,
-                        style=ft.ButtonStyle(
-                            color=colors.text_secondary,
-                            text_style=ft.TextStyle(size=12),
-                        ),
+                    # Center the cancel button
+                    ft.Row(
+                        [
+                            ft.TextButton(
+                                text="Cancel Download",
+                                icon=ft.Icons.CANCEL,
+                                on_click=self._cancel_ai_download,
+                                style=ft.ButtonStyle(
+                                    color=colors.text_secondary,
+                                    text_style=ft.TextStyle(size=12),
+                                ),
+                            ),
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER,
                     ),
                 ],
                 spacing=0,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             ),
             padding=ft.padding.all(SPACING["lg"]),
             border_radius=12,
@@ -1034,7 +1045,7 @@ class OnboardingFlow:
                             ),
                             ft.TextButton(
                                 text="Choose Traditional",
-                                on_click=lambda e: self._select_ai_option(
+                                on_click=lambda _: self._select_ai_option(
                                     "traditional"
                                 ),
                                 style=ft.ButtonStyle(
@@ -1064,7 +1075,7 @@ class OnboardingFlow:
             and not self.onboarding_data.get("ai_skipped", False)
         )
 
-    def _start_ai_download(self, e) -> None:
+    def _start_ai_download(self, _) -> None:
         """Start AI model download with improved UI updates."""
         try:
             # Use the download manager's progress instance
@@ -1130,7 +1141,7 @@ class OnboardingFlow:
             else:
                 self.container.update()
 
-    def _cancel_ai_download(self, e) -> None:
+    def _cancel_ai_download(self, _) -> None:
         """Cancel AI model download."""
         try:
             # Cancel the download

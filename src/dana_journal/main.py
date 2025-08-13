@@ -180,8 +180,11 @@ class JournalVaultApp:
     def _initialize_ai_service(self) -> None:
         """Initialize the AI reflection service."""
         try:
+            print("DEBUG: Starting AI service initialization...")
+            
             # Get AI settings from configuration
             ai_inference_settings = app_config.get_ai_inference_settings()
+            print(f"DEBUG: AI inference settings: {ai_inference_settings}")
 
             # Configure AI service with user preferences
             ai_config = AIServiceConfig(
@@ -189,9 +192,23 @@ class JournalVaultApp:
                 cache_expiry_hours=ai_inference_settings.get("cache_expiry_hours", 168),
                 auto_load_model=ai_inference_settings.get("auto_load_model", True),
             )
+            print(f"DEBUG: AI config created: cache_enabled={ai_config.cache_enabled}, auto_load_model={ai_config.auto_load_model}")
 
-            # Initialize service
+            # Initialize service with retry if needed
+            print("DEBUG: Creating AIReflectionService...")
             self.ai_service = AIReflectionService(ai_config)
+            print(f"DEBUG: AIReflectionService created. Available: {self.ai_service.is_available}")
+            print(f"DEBUG: AI service detailed status: {self.ai_service.status}")
+            
+            # If initial creation failed but model exists, try immediate retry
+            if not self.ai_service.is_available and hasattr(self.ai_service, 'retry_initialization'):
+                print("DEBUG: Initial AI service creation failed, attempting immediate retry...")
+                retry_success = self.ai_service.retry_initialization()
+                print(f"DEBUG: Immediate retry result: {retry_success}")
+                if retry_success:
+                    print("DEBUG: AI service successfully initialized on immediate retry!")
+                else:
+                    print("DEBUG: Immediate retry also failed, will retry on first use")
 
             # Update service status
             app_config.update_ai_service_status(
@@ -205,10 +222,17 @@ class JournalVaultApp:
             )
 
             print(f"AI service initialized. Available: {self.ai_service.is_available}")
+            
+            # Test that the service remains available
+            import time
+            time.sleep(0.1)  # Small delay
+            print(f"DEBUG: AI service still available after delay: {self.ai_service.is_available}")
 
         except Exception as e:
             error_msg = f"Failed to initialize AI service: {e}"
             print(error_msg)
+            import traceback
+            traceback.print_exc()
 
             # Update error status in config
             app_config.update_ai_service_status(
@@ -635,38 +659,72 @@ class JournalVaultApp:
     ) -> None:
         """Async method to generate AI reflection."""
         try:
-            # Check if AI service is available
+            # Enhanced debugging for AI service availability
+            print(f"DEBUG: AI service object exists: {self.ai_service is not None}")
+            if self.ai_service:
+                print(f"DEBUG: AI service is_available: {self.ai_service.is_available}")
+                print(f"DEBUG: AI service status: {self.ai_service.status}")
+                
+            # Progress callback to update UI
+            def update_progress(message: str):
+                # Update the UI based on the message type
+                if "Loading AI model" in message or "Initializing" in message:
+                    self.ai_reflection_component.show_model_loading_state()
+                elif "Generating" in message or "Processing" in message:
+                    self.ai_reflection_component.show_generating_state()
+                elif hasattr(self.ai_reflection_component, "update_generating_status"):
+                    self.ai_reflection_component.update_generating_status(message)
+
+            # Check if AI service is available, with silent retry attempt
             if not self.ai_service or not self.ai_service.is_available:
-                # Show fallback message
-                fallback_data = {
-                    "insights": [
-                        "AI reflection is not currently available. Please ensure the AI model is downloaded."
-                    ],
-                    "questions": [
-                        "What insights can you draw from this entry on your own?"
-                    ],
-                    "themes": ["reflection"],
-                    "generated_at": datetime.now().isoformat(),
-                }
-                self.ai_reflection_component.show_reflection(fallback_data)
-                self.ai_reflection_component._set_regenerate_button_loading(False)
-                return
+                # Try to retry initialization if service exists but isn't available
+                retry_attempted = False
+                if self.ai_service and hasattr(self.ai_service, 'retry_initialization'):
+                    print("DEBUG: Attempting to retry AI service initialization...")
+                    # Show loading message during retry instead of error
+                    update_progress("Initializing AI service...")
+                    
+                    retry_success = self.ai_service.retry_initialization()
+                    retry_attempted = True
+                    print(f"DEBUG: Retry initialization result: {retry_success}")
+                    if retry_success:
+                        print("DEBUG: AI service successfully initialized on retry!")
+                        # Continue with normal generation flow
+                    else:
+                        print("DEBUG: Retry initialization failed")
+                
+                # Only show error if retry was not attempted or failed
+                if not self.ai_service or not self.ai_service.is_available:
+                    # Enhanced error message with debugging info
+                    debug_info = "No AI service" if not self.ai_service else f"Service exists but unavailable: {self.ai_service.status}"
+                    print(f"DEBUG: AI not available - {debug_info}")
+                    
+                    # Show appropriate message based on whether we tried to retry
+                    if retry_attempted:
+                        error_message = "AI service failed to initialize. Please restart the application or check if the AI model is properly installed."
+                    else:
+                        error_message = "AI reflection is not currently available. Please ensure the AI model is downloaded."
+                    
+                    # Show fallback message
+                    fallback_data = {
+                        "insights": [
+                            error_message
+                        ],
+                        "questions": [
+                            "What insights can you draw from this entry on your own?"
+                        ],
+                        "themes": ["reflection"],
+                        "generated_at": datetime.now().isoformat(),
+                    }
+                    self.ai_reflection_component.show_reflection(fallback_data)
+                    self.ai_reflection_component._set_regenerate_button_loading(False)
+                    return
 
             # Check if model is currently loading
             if self.ai_service.is_loading:
                 # Show model loading state instead of generating state
                 self.ai_reflection_component.show_model_loading_state()
                 # The service will wait for loading to complete, so we can proceed normally
-
-            # Progress callback to update UI
-            def update_progress(message: str):
-                # Update the UI based on the message type
-                if "Loading AI model" in message:
-                    self.ai_reflection_component.show_model_loading_state()
-                elif "Generating" in message or "Processing" in message:
-                    self.ai_reflection_component.show_generating_state()
-                elif hasattr(self.ai_reflection_component, "update_generating_status"):
-                    self.ai_reflection_component.update_generating_status(message)
 
             # Generate reflection using AI service
             entry_date_str = self.current_entry_date.isoformat()
