@@ -9,7 +9,6 @@ from typing import Set, Dict, Any, Optional
 import flet as ft
 from .ui.theme import (
     theme_manager,
-    ThemedContainer,
     ThemedText,
     SPACING,
     COMPONENT_SIZES,
@@ -84,7 +83,7 @@ class JournalVaultApp:
     def _setup_page(self) -> None:
         """Configure page properties and theme."""
         self.page.title = "Dana"
-        
+
         # Apply saved window state
         window_state = app_config.get_window_state()
         self.page.window.width = window_state.get("width", 1400)
@@ -222,7 +221,6 @@ class JournalVaultApp:
         """Create the main three-panel layout with Obsidian-like design."""
         colors = self.theme_manager.colors
 
-
         # Initialize file manager if not already done
         if not self.file_manager:
             self.file_manager = FileManager(self.storage_path)
@@ -333,7 +331,7 @@ class JournalVaultApp:
             content=self.text_editor.get_container(),
             # Expand is handled by the flex container above
         )
-        
+
         # Create collapsible wisdom card container
         self.wisdom_container = ft.Container(
             content=self.ai_reflection_component.get_container(),
@@ -341,7 +339,7 @@ class JournalVaultApp:
             # No fixed height - will be controlled by the component itself
             # Wisdom card will be collapsible and use flex ratios
         )
-        
+
         # Journal entry section with conditional wisdom card
         journal_entry_section = ft.Container(
             content=ft.Column(
@@ -370,7 +368,9 @@ class JournalVaultApp:
         )
 
         # Main layout with left sidebar and main content (header removed for more writing space)
-        main_layout = ft.Row(controls=[left_sidebar, main_content], spacing=0, expand=True)
+        main_layout = ft.Row(
+            controls=[left_sidebar, main_content], spacing=0, expand=True
+        )
 
         self.page.add(main_layout)
 
@@ -480,10 +480,12 @@ class JournalVaultApp:
                 # Show minimal indicator that AI reflection is available
                 self.ai_reflection_component.show_available_indicator()
                 # Show the wisdom container
-                if hasattr(self, 'wisdom_container'):
+                if hasattr(self, "wisdom_container"):
                     self.wisdom_container.visible = True
                     self.wisdom_container.update()
-                print(f"Loaded AI reflection data for entry: {entry_date} (showing indicator)")
+                print(
+                    f"Loaded AI reflection data for entry: {entry_date} (showing indicator)"
+                )
 
             print(f"Selected entry for date: {entry_date.strftime('%Y-%m-%d')}")
 
@@ -541,7 +543,7 @@ class JournalVaultApp:
             return
 
         # Show the wisdom container
-        if hasattr(self, 'wisdom_container'):
+        if hasattr(self, "wisdom_container"):
             self.wisdom_container.visible = True
             self.wisdom_container.update()
 
@@ -566,9 +568,9 @@ class JournalVaultApp:
     def _on_ai_hide(self) -> None:
         """Handle AI hide request."""
         self.ai_reflection_component.hide()
-        
+
         # Hide the wisdom container to give full space to text editor
-        if hasattr(self, 'wisdom_container'):
+        if hasattr(self, "wisdom_container"):
             self.wisdom_container.visible = False
             self.wisdom_container.update()
 
@@ -736,12 +738,18 @@ class JournalVaultApp:
 
             # Show user-friendly error based on error type and re-enable button
             if "memory" in str(e).lower() or "insufficient" in str(e).lower():
-                self.ai_reflection_component.show_error_state("Not enough memory available. Try closing other applications and regenerating.")
+                self.ai_reflection_component.show_error_state(
+                    "Not enough memory available. Try closing other applications and regenerating."
+                )
             elif "model" in str(e).lower() or "not found" in str(e).lower():
-                self.ai_reflection_component.show_error_state("AI model not available. Please ensure the AI model is downloaded in settings.")
+                self.ai_reflection_component.show_error_state(
+                    "AI model not available. Please ensure the AI model is downloaded in settings."
+                )
             else:
-                self.ai_reflection_component.show_error_state(f"AI analysis temporarily unavailable: {str(e)}")
-            
+                self.ai_reflection_component.show_error_state(
+                    f"AI analysis temporarily unavailable: {str(e)}"
+                )
+
             # Ensure button is re-enabled in all error cases
             self.ai_reflection_component._set_regenerate_button_loading(False)
 
@@ -793,15 +801,19 @@ class JournalVaultApp:
                 # Let user decide when to view AI insights
                 if entry.ai_reflection and self.ai_reflection_component:
                     # Store the reflection data
-                    self.ai_reflection_component.current_reflection = entry.ai_reflection
+                    self.ai_reflection_component.current_reflection = (
+                        entry.ai_reflection
+                    )
                     self.ai_reflection_component._update_content(entry.ai_reflection)
                     # Show minimal indicator that AI reflection is available
                     self.ai_reflection_component.show_available_indicator()
                     # Show the wisdom container
-                    if hasattr(self, 'wisdom_container'):
+                    if hasattr(self, "wisdom_container"):
                         self.wisdom_container.visible = True
                         self.wisdom_container.update()
-                    print(f"Loaded AI reflection data for entry: {entry_date} (showing indicator)")
+                    print(
+                        f"Loaded AI reflection data for entry: {entry_date} (showing indicator)"
+                    )
             else:
                 self.current_entry_content = ""
                 self.current_entry_exists = False
@@ -1029,14 +1041,14 @@ def main(page: ft.Page) -> None:
 if __name__ == "__main__":
     # Configure Flet app with custom Dana branding
     import os
-    
+
     # Get assets directory path
     assets_dir = os.path.join(os.path.dirname(__file__), "..", "..", "assets")
     assets_dir = os.path.abspath(assets_dir)
-    
+
     print("🚀 Starting Dana")
     print(f"📁 Assets directory: {assets_dir}")
-    
+
     # Run with custom configuration for Dana branding
     ft.app(
         target=main,

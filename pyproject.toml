@@ -1,5 +1,5 @@
 [project]
-name = "journal-vault"
+name = "dana-journal"
 version = "0.1.0"
 description = "Dana - safe journal space: A privacy-first desktop journaling companion with local AI support"
 authors = [

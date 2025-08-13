@@ -51,7 +51,7 @@ A privacy-first desktop journaling application with warm, companion-like AI insi
 
 #### First Time Setup (with onboarding)
 ```bash
-uv run python -m journal_vault.main
+uv run python -m dana_journal.main
 ```
 
 This will guide you through the 4-step onboarding process:
@@ -66,13 +66,13 @@ This will guide you through the 4-step onboarding process:
 uv run python tests/reset_onboarding.py
 
 # Then run the app
-uv run python -m journal_vault.main
+uv run python -m dana_journal.main
 ```
 
 #### Skip Onboarding (after first setup)
 Once you've completed onboarding, simply run:
 ```bash
-uv run python -m journal_vault.main
+uv run python -m dana_journal.main
 ```
 
 The app will remember your settings and open directly to the main interface.
@@ -82,7 +82,7 @@ The app will remember your settings and open directly to the main interface.
 ### Project Structure
 
 ```
-src/journal_vault/
+src/dana_journal/
 ├── main.py              # Main application entry point
 ├── config/
 │   └── app_config.py    # Configuration management
@@ -107,7 +107,7 @@ src/journal_vault/
 uv sync
 
 # Run the application
-uv run python -m journal_vault.main
+uv run python -m dana_journal.main
 
 # Run tests
 uv run pytest
@@ -128,7 +128,7 @@ Journal entries are stored as markdown files with YAML frontmatter:
 
 ```
 Your Journal Directory/
-├── .journal_vault/
+├── .dana_journal/
 │   ├── config.json          # App settings
 │   ├── index.sqlite         # Entry indexing (implemented)
 │   ├── models/              # AI model storage
@@ -165,7 +165,7 @@ Your journal content goes here in **markdown format**.
 
 ### App Settings
 
-Configuration is automatically managed in `~/.journal_vault/config.json`:
+Configuration is automatically managed in `~/.dana_journal/config.json`:
 
 ```json
 {
@@ -189,12 +189,12 @@ The application supports two vault setup modes:
 
 #### Create New Vault
 - Choose a parent directory and vault name
-- Creates a new folder structure with `.journal_vault/` metadata
+- Creates a new folder structure with `.dana_journal/` metadata
 - Perfect for starting fresh
 
 #### Load Existing Vault
 - Smart detection of existing journal structures
-- Supports both confirmed vaults (with `.journal_vault/`) and compatible folders
+- Supports both confirmed vaults (with `.dana_journal/`) and compatible folders
 - Automatically initializes metadata for compatible structures
 
 ## 🛡️ Privacy & Security

@@ -55,7 +55,7 @@ class AIReflectionService:
         self.prompt_engine = JournalPromptEngine(self.config.prompt_config)
 
         # Cache setup
-        self.cache_dir = Path.home() / ".journal_vault" / "ai_cache"
+        self.cache_dir = Path.home() / ".dana_journal" / "ai_cache"
         if self.config.cache_enabled:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
 
@@ -110,9 +110,7 @@ class AIReflectionService:
     @property
     def is_loading(self) -> bool:
         """Check if the AI model is currently being loaded."""
-        return (
-            self.inference_engine is not None and self.inference_engine.is_loading
-        )
+        return self.inference_engine is not None and self.inference_engine.is_loading
 
     @property
     def status(self) -> Dict[str, Any]:
@@ -200,17 +198,18 @@ class AIReflectionService:
         if self.is_loading:
             if progress_callback:
                 progress_callback("Loading AI model...")
-            
+
             # Wait for model loading to complete
             import time as time_module
+
             max_wait_time = 60  # Maximum 60 seconds wait
             wait_start = time_module.time()
-            
+
             while self.is_loading and (time_module.time() - wait_start) < max_wait_time:
                 time_module.sleep(1)
                 if progress_callback:
                     progress_callback("Loading AI model...")
-            
+
             # If still loading after timeout, show error
             if self.is_loading:
                 return ReflectionResult(

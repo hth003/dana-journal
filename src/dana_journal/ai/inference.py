@@ -76,11 +76,11 @@ class AIInferenceEngine:
         with self._lock:
             if self._model is None:
                 return False
-            
+
             # Check if the model object is still valid
             try:
                 # Simple validation - check if model has expected attributes
-                if not hasattr(self._model, '__call__'):
+                if not hasattr(self._model, "__call__"):
                     self._model = None
                     return False
                 return True
@@ -293,13 +293,13 @@ class AIInferenceEngine:
 
         except Exception as e:
             generation_time = time.time() - start_time
-            
+
             # If generation fails, validate model health and try recovery
             if not self.validate_model_health():
                 if self.load_model():
                     # Could retry generation here, but for now just return error
                     pass
-            
+
             return {
                 "text": "",
                 "tokens_generated": 0,

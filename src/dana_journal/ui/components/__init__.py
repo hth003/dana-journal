@@ -7,12 +7,12 @@ from .file_explorer import FileExplorer, FileTreeNode
 from .ai_reflection import AIReflectionComponent
 
 __all__ = [
-    'OnboardingFlow', 
-    'CalendarComponent', 
-    'MiniCalendar',
-    'EnhancedTextEditor',
-    'MarkdownHelper',
-    'FileExplorer',
-    'FileTreeNode',
-    'AIReflectionComponent'
+    "OnboardingFlow",
+    "CalendarComponent",
+    "MiniCalendar",
+    "EnhancedTextEditor",
+    "MarkdownHelper",
+    "FileExplorer",
+    "FileTreeNode",
+    "AIReflectionComponent",
 ]
