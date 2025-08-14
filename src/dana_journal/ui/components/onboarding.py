@@ -456,9 +456,6 @@ class OnboardingFlow:
                                 self._create_feature_item_compact(
                                     "📈", "Pattern recognition"
                                 ),
-                                self._create_feature_item_compact(
-                                    "✨", "Writing prompts"
-                                ),
                                 self._create_feature_item_compact("🔒", "100% private"),
                             ],
                             spacing=8,
@@ -513,7 +510,7 @@ class OnboardingFlow:
                                 ),
                                 ThemedText(
                                     self.theme_manager,
-                                    "Traditional",
+                                    "Without AI",
                                     variant=(
                                         "primary"
                                         if traditional_selected
@@ -530,9 +527,6 @@ class OnboardingFlow:
                         # Features - compact layout with balanced text
                         ft.Column(
                             controls=[
-                                self._create_feature_item_compact(
-                                    "✍️", "Manual analysis"
-                                ),
                                 self._create_feature_item_compact("📝", "Text editing"),
                                 self._create_feature_item_compact(
                                     "📅", "Calendar view"
