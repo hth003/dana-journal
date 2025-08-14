@@ -128,7 +128,7 @@ def test_file_picker(page: ft.Page):
         ft.Column(
             [
                 ft.Text("File Picker Test", size=20, weight=ft.FontWeight.BOLD),
-                ft.Text("Window should be on top and visible", size=12, color="red"),
+                ft.Text("Window should be on top and visible", size=12, color=ft.Colors.RED),
                 ft.Container(height=20),
                 ft.ElevatedButton(
                     "Basic Directory Picker", on_click=select_folder_basic

@@ -328,7 +328,7 @@ class JournalVaultApp:
             on_click=self._on_delete_current_entry,
             style=ft.ButtonStyle(
                 shape=ft.RoundedRectangleBorder(radius=6),
-                overlay_color=colors.error_subtle,
+                overlay_color=colors.hover_strong,
             ),
         )
 
@@ -1035,7 +1035,7 @@ class JournalVaultApp:
                                     "Delete",
                                     on_click=on_confirm,
                                     style=ft.ButtonStyle(
-                                        color="#FFFFFF",
+                                        color=colors.text_on_primary,
                                         bgcolor=colors.error,
                                     ),
                                     width=120,

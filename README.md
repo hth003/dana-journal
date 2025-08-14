@@ -217,6 +217,9 @@ uv run python tests/test_file_picker.py
 
 # Reset onboarding state
 uv run python tests/reset_onboarding.py
+
+# Remove .dana_journal directory for fresh testing
+rm -rf ~/.dana_journal
 ```
 
 ### Running Tests

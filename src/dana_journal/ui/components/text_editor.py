@@ -160,13 +160,13 @@ class EnhancedTextEditor:
                 height=1.7,  # Improved line height for better readability
                 font_family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",  # Better system fonts
             ),
-            bgcolor="transparent",
+            bgcolor=ft.Colors.TRANSPARENT,
             on_change=self._on_text_change,
             on_focus=self._on_focus,
             on_blur=self._on_blur,
             expand=True,
             cursor_color=colors.primary,
-            selection_color=colors.primary + "40",  # Primary with opacity
+            selection_color=colors.hover_strong,  # Primary with opacity
             keyboard_type=ft.KeyboardType.MULTILINE,
         )
 
