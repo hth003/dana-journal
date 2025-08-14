@@ -18,6 +18,31 @@ dependencies = [
     "requests>=2.31.0",
 ]
 
+[project.scripts]
+dana-journal = "dana_journal.main:main"
+dana = "dana_journal.main:main"
+
+[project.gui-scripts]
+dana = "dana_journal.main:main"
+
+[tool.flet]
+# Product Information
+product = "Dana - safe journal space"
+company = "Dana Team"
+copyright = "Copyright (C) 2025 Dana Team"
+build_number = 1
+
+# App Configuration
+[tool.flet.app]
+module = "main"
+path = "src/dana_journal"
+
+# Compilation Settings
+[tool.flet.compile]
+app = false
+packages = false
+cleanup = false
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
@@ -43,6 +68,24 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+addopts = [
+    "--verbose",
+    "--tb=short",
+    "--strict-markers",
+    "--disable-warnings",
+    "--color=yes"
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "ai: marks tests that require AI functionality",
+    "integration: marks tests as integration tests",
+    "ui: marks tests that test UI components"
+]
+testmon = false
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning"
+]
 
 [dependency-groups]
 dev = [

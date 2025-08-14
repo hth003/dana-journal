@@ -195,7 +195,7 @@ class FileManager:
     ) -> JournalEntry:
         """Create a new journal entry."""
         if title is None:
-            title = f"Journal Entry - {entry_date.strftime('%B %d, %Y')}"
+            title = entry_date.strftime('%b %d, %Y')  # Friendly date format: Aug 14, 2025
 
         now = datetime.now()
         entry = JournalEntry(
@@ -351,8 +351,9 @@ class FileManager:
             return False
 
         try:
-            # Update entry date
+            # Update entry date and title
             old_entry.date = new_date
+            old_entry.title = new_date.strftime('%b %d, %Y')  # Update title to match new date
             old_entry.modified_at = datetime.now()
 
             # Save to new location

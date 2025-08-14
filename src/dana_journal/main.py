@@ -1090,14 +1090,14 @@ class JournalVaultApp:
         self.page.update()
 
 
-def main(page: ft.Page) -> None:
-    """Main application entry point."""
+def main_gui(page: ft.Page) -> None:
+    """GUI entry point for Flet app."""
     app = JournalVaultApp(page)
     app.run()
 
 
-if __name__ == "__main__":
-    # Configure Flet app with custom Dana branding
+def main() -> None:
+    """CLI entry point for the application."""
     import os
 
     # Get assets directory path
@@ -1109,8 +1109,12 @@ if __name__ == "__main__":
 
     # Run with custom configuration for Dana branding
     ft.app(
-        target=main,
+        target=main_gui,
         name="Dana",  # App name for system identification
         assets_dir=assets_dir,  # Assets directory for icons and resources
         view=ft.AppView.FLET_APP,  # Use native app view (not web view)
     )
+
+
+if __name__ == "__main__":
+    main()

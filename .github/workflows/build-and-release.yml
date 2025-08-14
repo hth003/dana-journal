@@ -1,0 +1,199 @@
+name: Build and Release Dana Journal
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+  UV_VERSION: "0.5.0"
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+      
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: uv sync
+      
+      - name: Run formatter check
+        run: uv run black --check .
+      
+      - name: Run linter
+        run: uv run ruff check .
+      
+      - name: Run tests
+        run: uv run pytest --verbose
+
+  build:
+    name: Build ${{ matrix.platform }}
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            os: windows-latest
+            artifact-name: dana-journal-windows
+            artifact-path: build/windows
+          - platform: macos
+            os: macos-latest
+            artifact-name: dana-journal-macos
+            artifact-path: build/macos
+          - platform: linux
+            os: ubuntu-latest
+            artifact-name: dana-journal-linux
+            artifact-path: build/linux
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+      
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: uv sync
+      
+      - name: Install Flutter (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          sudo snap install flutter --classic
+          flutter doctor
+      
+      - name: Install additional Linux dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang cmake ninja-build pkg-config libgtk-3-dev \
+            liblzma-dev libstdc++-12-dev
+      
+      - name: Build application
+        run: uv run flet build ${{ matrix.platform }} --verbose
+        timeout-minutes: 30
+      
+      - name: List build output (Debug)
+        run: |
+          echo "Build directory contents:"
+          ls -la build/ || echo "No build directory found"
+          if [ -d "${{ matrix.artifact-path }}" ]; then
+            echo "${{ matrix.artifact-path }} contents:"
+            ls -la "${{ matrix.artifact-path }}"
+          fi
+        shell: bash
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-path }}
+          retention-days: 7
+
+  release:
+    name: Create Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+      
+      - name: List downloaded artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          find dist/ -type f -exec ls -la {} \;
+      
+      - name: Create release archives
+        run: |
+          cd dist/
+          
+          # Create ZIP archives for each platform
+          if [ -d "dana-journal-windows" ]; then
+            cd dana-journal-windows
+            zip -r ../dana-journal-${{ github.ref_name }}-windows.zip .
+            cd ..
+          fi
+          
+          if [ -d "dana-journal-macos" ]; then
+            cd dana-journal-macos  
+            tar -czf ../dana-journal-${{ github.ref_name }}-macos.tar.gz .
+            cd ..
+          fi
+          
+          if [ -d "dana-journal-linux" ]; then
+            cd dana-journal-linux
+            tar -czf ../dana-journal-${{ github.ref_name }}-linux.tar.gz .
+            cd ..
+          fi
+          
+          # List final archives
+          ls -la *.zip *.tar.gz 2>/dev/null || echo "No archives created"
+      
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "## Dana Journal v${{ steps.version.outputs.version }}" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "### Features" >> $GITHUB_OUTPUT
+          echo "- Privacy-first desktop journaling application" >> $GITHUB_OUTPUT
+          echo "- Local AI-powered insights with Dana companion" >> $GITHUB_OUTPUT
+          echo "- Cross-platform support (Windows, macOS, Linux)" >> $GITHUB_OUTPUT
+          echo "- Markdown-based journal entries with auto-save" >> $GITHUB_OUTPUT
+          echo "- Interactive calendar and file explorer" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "### Installation" >> $GITHUB_OUTPUT
+          echo "Download the appropriate archive for your platform and extract it." >> $GITHUB_OUTPUT
+          echo "Run the Dana executable to start the application." >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "### System Requirements" >> $GITHUB_OUTPUT
+          echo "- Python 3.11+ (if running from source)" >> $GITHUB_OUTPUT
+          echo "- 4GB RAM minimum, 8GB recommended for AI features" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Dana Journal ${{ steps.version.outputs.version }}
+          body: ${{ steps.changelog.outputs.changelog }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            dist/*.zip
+            dist/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
