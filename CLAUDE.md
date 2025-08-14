@@ -22,6 +22,34 @@ uv sync
 uv sync --no-dev
 ```
 
+### Packaging and Distribution
+```bash
+# Quick development build for current platform
+./scripts/build.sh dev
+
+# Production builds
+./scripts/build.sh macos      # macOS .app bundle
+./scripts/build.sh windows    # Windows .exe  
+./scripts/build.sh linux      # Linux executable
+./scripts/build.sh web        # Progressive Web App
+
+# Build all platforms
+./scripts/build.sh all
+
+# Version management
+python scripts/version.py current           # Show version info
+python scripts/version.py bump patch        # Bump patch version
+python scripts/version.py release minor     # Bump version and tag
+
+# Complete release workflow  
+./scripts/package.sh release-patch          # Create patch release
+./scripts/package.sh build-all             # Build all platforms
+./scripts/package.sh check-health          # Validate build environment
+
+# Clean build artifacts
+./scripts/build.sh clean
+```
+
 ### Testing and Code Quality
 ```bash
 # Run tests

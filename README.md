@@ -25,13 +25,23 @@ A privacy-first desktop journaling application with warm, companion-like AI insi
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Installation Options
 
+#### Option 1: Pre-built Packages (Recommended)
+Download the latest release for your platform:
+
+- **macOS**: Download `dana-journal.app` and drag to Applications folder
+- **Windows**: Download and run `dana-journal.exe` installer  
+- **Linux**: Download `dana-journal` executable and make it executable
+- **Web**: Access the Progressive Web App at [your-web-url]
+
+#### Option 2: From Source (Development)
+
+##### Prerequisites
 - **Python 3.11 or higher**
-- **uv package manager** (recommended for dependency management)
+- **uv package manager** (for dependency management)
 
-### Installation
-
+##### Build from Source
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/your-username/journal-vault.git
@@ -45,6 +55,17 @@ A privacy-first desktop journaling application with warm, companion-like AI insi
    
    # Install project dependencies
    uv sync
+   ```
+
+3. **Build the application:**
+   ```bash
+   # Quick development build for current platform
+   ./scripts/build.sh dev
+   
+   # Or production build
+   ./scripts/build.sh macos    # for macOS
+   ./scripts/build.sh windows  # for Windows
+   ./scripts/build.sh linux    # for Linux
    ```
 
 ### Running the Application
@@ -121,6 +142,72 @@ uv run ruff check .
 # Reset onboarding for testing
 uv run python tests/reset_onboarding.py
 ```
+
+### Packaging and Distribution
+
+#### Build Commands
+```bash
+# Quick development build for current platform
+./scripts/build.sh dev
+
+# Production builds for specific platforms
+./scripts/build.sh macos      # macOS .app bundle
+./scripts/build.sh windows    # Windows .exe installer
+./scripts/build.sh linux      # Linux executable
+./scripts/build.sh web        # Progressive Web App
+
+# Build all supported platforms
+./scripts/build.sh all
+
+# Clean build artifacts
+./scripts/build.sh clean
+```
+
+#### Version Management
+```bash
+# Show current version and next possible versions
+python scripts/version.py current
+
+# Bump version (patch/minor/major)
+python scripts/version.py bump patch        # 0.1.0 → 0.1.1
+python scripts/version.py bump minor        # 0.1.0 → 0.2.0
+python scripts/version.py bump major        # 0.1.0 → 1.0.0
+
+# Create release with git tag
+python scripts/version.py release minor
+```
+
+#### Complete Release Workflow
+```bash
+# Create patch release with all platforms
+./scripts/package.sh release-patch
+
+# Build and package all platforms
+./scripts/package.sh build-all
+
+# Validate build environment
+./scripts/package.sh check-health
+
+# Generate checksums for distribution
+./scripts/package.sh generate-checksums
+```
+
+#### Build Requirements
+
+##### For all platforms:
+- Python 3.11+, uv, Git
+
+##### For macOS builds:
+- Xcode Command Line Tools: `xcode-select --install`
+- CocoaPods: `sudo gem install cocoapods`
+
+##### For Windows builds:
+- Visual Studio Build Tools with C++ components
+- Windows 10 SDK
+
+##### For Linux builds:
+- Build essentials: `sudo apt-get install build-essential`
+- GTK development: `sudo apt-get install libgtk-3-dev`
 
 ### Data Storage Format
 

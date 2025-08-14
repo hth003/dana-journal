@@ -30,18 +30,87 @@ dana = "dana_journal.main:main"
 product = "Dana - safe journal space"
 company = "Dana Team"
 copyright = "Copyright (C) 2025 Dana Team"
-build_number = 1
+build_number = 2
+build_version = "0.1.0"
 
 # App Configuration
 [tool.flet.app]
 module = "main"
 path = "src/dana_journal"
 
+# Icons Configuration
+[tool.flet.icons]
+# Universal icon (fallback)
+icon = "assets/icons/dana_icon_512x512.png"
+# Platform-specific icons
+icon_macos = "assets/icons/dana_icon_512x512.png"
+icon_windows = "assets/icons/dana_icon_256x256.png"
+icon_linux = "assets/icons/dana_icon_256x256.png"
+icon_web = "assets/icons/dana_icon_256x256.png"
+
+# App Metadata
+[tool.flet.metadata]
+short_description = "Privacy-first desktop journaling companion with local AI support"
+long_description = "Dana - safe journal space is a privacy-first desktop journaling application that keeps all your data local while providing AI-powered insights through your personal writing companion."
+keywords = ["journal", "privacy", "AI", "writing", "personal", "local", "companion"]
+category = "productivity"
+
+# Permissions (primarily for mobile builds)
+[tool.flet.permissions]
+# File system access for journal storage
+storage = true
+# Optional camera access for future photo journaling
+camera = false
+# Microphone for future voice notes
+microphone = false
+# Location for future location-based entries
+location = false
+
+# Build Settings
+[tool.flet.build]
+# Include all Python packages in build
+include_packages = ["llama_cpp", "huggingface_hub", "requests", "psutil"]
+# Compile Python files for better performance
+compile_app = true
+# Clean temporary files after build
+cleanup_on_exit = true
+# Enable verbose logging during build
+verbose = true
+
+# Platform-specific build configurations
+[tool.flet.build.macos]
+bundle_id = "com.danateam.dana-journal"
+category = "public.app-category.productivity"
+minimum_system_version = "11.0"
+# Code signing (to be configured later)
+# codesign_identity = "Developer ID Application: Dana Team"
+
+[tool.flet.build.windows]
+# Windows-specific build settings
+console = false
+file_description = "Dana - safe journal space"
+company_name = "Dana Team"
+file_version = "0.1.0"
+product_version = "0.1.0"
+
+[tool.flet.build.linux]
+# Linux package information
+category = "Office"
+generic_name = "Journal Application"
+mime_type = ["text/markdown", "text/plain"]
+
+[tool.flet.build.web]
+# PWA configuration
+route_url_strategy = "path"
+use_color_emoji = true
+# Service worker for offline functionality
+service_worker_js = "sw.js"
+
 # Compilation Settings
 [tool.flet.compile]
-app = false
-packages = false
-cleanup = false
+app = true
+packages = true
+cleanup = true
 
 [project.optional-dependencies]
 dev = [
