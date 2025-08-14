@@ -172,7 +172,7 @@ class EnhancedTextEditor:
         # Main container
         container = ThemedCard(
             self.theme_manager,
-            elevation="md",
+            elevation="none",
             content=ft.Column(
                 controls=[
                     self.toolbar,

@@ -24,7 +24,7 @@ class DANATheme:
     surface_elevated: str = "#FFFFFF"  # Pure white for elevated cards
     primary: str = "#E07A5F"  # Terracotta - warm, human, approachable
     primary_variant: str = "#D96847"  # Slightly darker terracotta
-    primary_subtle: str = "#E07A5F15"  # Primary with 15% opacity
+    primary_subtle: str = "#ecaf9f"  # Primary with 15% opacity
     secondary: str = "#3D5A80"  # Deep blue - trust, wisdom
     accent: str = "#81B29A"  # Sage green - growth, reflection
 
@@ -53,8 +53,8 @@ class DANATheme:
     info_subtle: str = "#7BA3D420"  # Blue with opacity
 
     # Interactive states - Warm, welcoming feedback
-    hover: str = "#E07A5F10"  # Terracotta hover (subtle)
-    hover_strong: str = "#E07A5F25"  # Strong hover state
+    hover: str = "#ecaf9f"  # Terracotta hover (subtle)
+    hover_strong: str = "#E07A5F"  # Strong hover state
     pressed: str = "#E07A5F30"  # Pressed state
     selected: str = "#E07A5F20"  # Selected state
     focus: str = "#E07A5F40"  # Focus state
