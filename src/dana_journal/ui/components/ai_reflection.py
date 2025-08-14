@@ -146,15 +146,17 @@ class DanaWisdomComponent:
                 horizontal=SPACING["sm"],  # Reduced horizontal padding
                 vertical=SPACING["xs"],  # Minimal vertical padding
             ),
-            visible=False,  # Hidden by default
+            visible=True,  # Visible by default - use expand state to control visibility
         )
 
     def show_reflection(self, reflection_data: Dict[str, Any]) -> None:
         """Display AI reflection content."""
         self.current_reflection = reflection_data
         self._update_content(reflection_data)
+        
+        # Ensure component is visible
         self.container.visible = True
-
+        
         # Auto-expand when showing new reflection content
         if not self.is_expanded:
             self._toggle_expand()
@@ -195,8 +197,12 @@ class DanaWisdomComponent:
             )
         ]
 
+        # Ensure component is visible and expanded
         self.container.visible = True
-        self.container.update()
+        if not self.is_expanded:
+            self._toggle_expand()
+        else:
+            self.container.update()
 
     def show_model_loading_state(self) -> None:
         """Show model loading state."""
@@ -220,8 +226,8 @@ class DanaWisdomComponent:
             )
         ]
 
+        # Ensure component is visible and expanded
         self.container.visible = True
-        # Auto-expand when loading model
         if not self.is_expanded:
             self._toggle_expand()
         else:
@@ -376,8 +382,13 @@ class DanaWisdomComponent:
             ),
         ]
         self._set_regenerate_button_loading(False)  # Ensure button is re-enabled
+        
+        # Ensure component is visible and expanded
         self.container.visible = True
-        self.container.update()
+        if not self.is_expanded:
+            self._toggle_expand()
+        else:
+            self.container.update()
 
     def _on_regenerate(self) -> None:
         """Handle regenerate button click."""

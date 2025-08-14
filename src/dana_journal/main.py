@@ -556,6 +556,9 @@ class JournalVaultApp:
         """Handle content changes from text editor."""
         self.current_entry_content = content
         self.current_entry_exists = bool(content.strip())
+        
+        # Update delete button visibility when content changes
+        self._update_entry_delete_button()
 
     def _on_save_entry(self, content: str) -> None:
         """Handle save requests from text editor."""
@@ -566,12 +569,7 @@ class JournalVaultApp:
         if not content.strip():
             return
 
-        # Show the wisdom container
-        if hasattr(self, "wisdom_container"):
-            self.wisdom_container.visible = True
-            self.wisdom_container.update()
-
-        # Show generating state
+        # Show generating state - component handles its own visibility
         self.ai_reflection_component.show_generating_state()
 
         # Generate AI reflection
@@ -592,11 +590,6 @@ class JournalVaultApp:
     def _on_ai_hide(self) -> None:
         """Handle AI hide request."""
         self.ai_reflection_component.hide()
-
-        # Hide the wisdom container to give full space to text editor
-        if hasattr(self, "wisdom_container"):
-            self.wisdom_container.visible = False
-            self.wisdom_container.update()
 
         # Clear AI reflection data from the entry
         self._clear_ai_reflection_from_entry()

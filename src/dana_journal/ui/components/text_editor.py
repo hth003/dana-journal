@@ -123,6 +123,7 @@ class EnhancedTextEditor:
         self._last_saved_content = ""
         self._is_dirty = False
         self._save_timer = None  # NEW
+        self._last_cursor_pos = 0  # Track cursor position
 
         # Auto-save manager
         self.auto_save_manager = AutoSaveManager(
@@ -219,15 +220,15 @@ class EnhancedTextEditor:
             controls=[
                 # Formatting buttons
                 create_format_button(
-                    ft.Icons.FORMAT_BOLD, "Bold (Ctrl+B)", lambda _: self._apply_bold()
+                    ft.Icons.FORMAT_BOLD, "Insert Bold Text", lambda _: self._apply_bold()
                 ),
                 create_format_button(
                     ft.Icons.FORMAT_ITALIC,
-                    "Italic (Ctrl+I)",
+                    "Insert Italic Text",
                     lambda _: self._apply_italic(),
                 ),
                 create_format_button(
-                    ft.Icons.LINK, "Link (Ctrl+K)", lambda _: self._apply_link()
+                    ft.Icons.LINK, "Insert Link", lambda _: self._apply_link()
                 ),
                 # Separator
                 ft.Container(
@@ -239,17 +240,17 @@ class EnhancedTextEditor:
                 # Heading buttons
                 create_format_button(
                     ft.Icons.LOOKS_ONE,
-                    "Heading 1 (Ctrl+1)",
+                    "Insert Heading 1",
                     lambda _: self._apply_heading(1),
                 ),
                 create_format_button(
                     ft.Icons.LOOKS_TWO,
-                    "Heading 2 (Ctrl+2)",
+                    "Insert Heading 2",
                     lambda _: self._apply_heading(2),
                 ),
                 create_format_button(
                     ft.Icons.LOOKS_3,
-                    "Heading 3 (Ctrl+3)",
+                    "Insert Heading 3",
                     lambda _: self._apply_heading(3),
                 ),
                 # Separator
@@ -296,6 +297,9 @@ class EnhancedTextEditor:
         new_content = e.control.value or ""
         self._content = new_content
         self._is_dirty = new_content != self._last_saved_content
+        
+        # Try to estimate cursor position based on content changes
+        self._update_cursor_position_estimate(new_content)
 
         # Update save indicator
         self._update_save_indicator()
@@ -325,8 +329,8 @@ class EnhancedTextEditor:
 
     def _on_focus(self, _: ft.ControlEvent) -> None:
         """Handle text field focus."""
-        # Could add focus-specific behavior here
-        pass
+        # Reset cursor position estimate when focusing
+        self._last_cursor_pos = len(self._content)
 
     def _on_blur(self, _: ft.ControlEvent) -> None:
         """Handle text field blur."""
@@ -413,92 +417,84 @@ class EnhancedTextEditor:
         if not self.text_field:
             return
 
-        # Get current text and cursor position
+        # Get current text and insert at the end
         current_text = self.text_field.value or ""
-        cursor_pos = len(current_text)  # Simplified - insert at end
-
-        # Insert bold formatting
-        before = current_text[:cursor_pos]
-        after = current_text[cursor_pos:]
-        new_text = before + "**bold text**" + after
+        new_text = current_text + "**bold text**"
 
         self.text_field.value = new_text
-        self.text_field.update()
-
-        # Trigger change event
         self._content = new_text
+        
+        # Update UI and trigger change
+        self.text_field.update()
         self._on_content_changed()
+        
+        # Focus back to text field
+        self.text_field.focus()
 
     def _apply_italic(self) -> None:
-        """Apply italic formatting."""
+        """Apply italic formatting at the end of content."""
         if not self.text_field:
             return
 
-        # Get current text and cursor position
+        # Get current text and insert at the end
         current_text = self.text_field.value or ""
-        cursor_pos = len(current_text)
-
-        # Insert italic formatting
-        before = current_text[:cursor_pos]
-        after = current_text[cursor_pos:]
-        new_text = before + "*italic text*" + after
+        new_text = current_text + "*italic text*"
 
         self.text_field.value = new_text
-        self.text_field.update()
-
-        # Trigger change event
         self._content = new_text
+        
+        # Update UI and trigger change
+        self.text_field.update()
         self._on_content_changed()
+        
+        # Focus back to text field
+        self.text_field.focus()
 
     def _apply_link(self) -> None:
-        """Apply link formatting."""
+        """Apply link formatting at the end of content."""
         if not self.text_field:
             return
 
-        # Get current text and cursor position
+        # Get current text and insert at the end
         current_text = self.text_field.value or ""
-        cursor_pos = len(current_text)
-
-        # Insert link formatting
-        before = current_text[:cursor_pos]
-        after = current_text[cursor_pos:]
-        new_text = before + "[link text](url)" + after
+        new_text = current_text + "[link text](url)"
 
         self.text_field.value = new_text
-        self.text_field.update()
-
-        # Trigger change event
         self._content = new_text
+        
+        # Update UI and trigger change
+        self.text_field.update()
         self._on_content_changed()
+        
+        # Focus back to text field
+        self.text_field.focus()
 
     def _apply_heading(self, level: int) -> None:
-        """Apply heading formatting."""
+        """Apply heading formatting at the end of content."""
         if not self.text_field:
             return
 
-        # Get current text and cursor position
+        # Get current text and insert at the end
         current_text = self.text_field.value or ""
-        cursor_pos = len(current_text)
-
-        # Insert heading formatting
         heading_prefix = "#" * level + " "
-        before = current_text[:cursor_pos]
-        after = current_text[cursor_pos:]
-
+        
         # Add newline before heading if needed
-        if before and not before.endswith("\n"):
+        if current_text and not current_text.endswith("\n"):
             heading_text = f"\n{heading_prefix}Heading {level}"
         else:
             heading_text = f"{heading_prefix}Heading {level}"
 
-        new_text = before + heading_text + after
+        new_text = current_text + heading_text
 
         self.text_field.value = new_text
-        self.text_field.update()
-
-        # Trigger change event
         self._content = new_text
+        
+        # Update UI and trigger change
+        self.text_field.update()
         self._on_content_changed()
+        
+        # Focus back to text field
+        self.text_field.focus()
 
     # Public methods
 
