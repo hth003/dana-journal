@@ -30,7 +30,7 @@ dana = "main:main"
 product = "Dana"
 company = "Dana Team"
 copyright = "Copyright (C) 2025 Dana Team"
-build_number = 6
+build_number = 8
 build_version = "0.1.0"
 
 # App Configuration

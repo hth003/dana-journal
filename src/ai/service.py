@@ -62,44 +62,122 @@ class AIReflectionService:
         # State tracking
         self._service_ready = False
         self._initialization_error: Optional[str] = None
+        
+        # Diagnostic file for packaged apps
+        self._diagnostic_file = self.cache_dir.parent / "ai_diagnostics.json"
 
-        # Initialize inference engine if model exists (with retry for file system race conditions)
+        # Initialize inference engine if model exists (with enhanced retry for packaged apps)
         if self.model_manager.is_model_available():
             self._initialize_inference_engine()
         elif self._should_retry_model_check():
-            # Sometimes file validation can fail on first try due to file system timing
-            import time
-            time.sleep(0.1)  # Brief pause to allow file system to settle
-            if self.model_manager.is_model_available():
-                self._initialize_inference_engine()
+            # Enhanced retry logic for packaged app environments
+            self._retry_model_initialization()
 
     def _should_retry_model_check(self) -> bool:
-        """Check if we should retry model validation."""
-        # Only retry if the model file exists but validation failed
+        """Check if we should retry model validation with enhanced logic for packaged apps."""
+        # Enhanced retry conditions for packaged environments
         try:
             from config import app_config
-            return (
-                app_config.is_ai_model_downloaded() and  # Config says it's downloaded
-                self.model_manager.model_path.exists()   # File exists on disk
-            )
+            config_says_downloaded = app_config.is_ai_model_downloaded()
+            file_exists = self.model_manager.model_path.exists()
+            
+            # Log for debugging in packaged environments
+            # Write diagnostic info for packaged app debugging
+            self.write_diagnostic_info({
+                'event': 'retry_check',
+                'config_downloaded': config_says_downloaded,
+                'file_exists': file_exists,
+                'model_path': str(self.model_manager.model_path)
+            })
+            
+            return config_says_downloaded and file_exists
         except ImportError:
-            # If we can't import config, just check if file exists
-            return self.model_manager.model_path.exists()
+            # If we can't import config, check file existence with retry
+            for attempt in range(3):
+                if self.model_manager.model_path.exists():
+                    return True
+                import time
+                time.sleep(0.1 * (attempt + 1))
+            return False
+    
+    def _retry_model_initialization(self, max_retries: int = 5) -> None:
+        """Enhanced model initialization retry logic for packaged apps."""
+        for attempt in range(max_retries):
+            try:
+                # Write diagnostic info for each retry attempt
+                self.write_diagnostic_info({
+                    'event': 'initialization_retry',
+                    'attempt': attempt + 1,
+                    'max_retries': max_retries
+                })
+                
+                # Progressive delay with longer waits for packaged apps
+                if attempt > 0:
+                    import time
+                    delay = 0.2 * (attempt + 1)  # Increase delay each attempt
+                    time.sleep(delay)
+                
+                # Enhanced model availability check
+                if self.model_manager.is_model_available(retry_count=3):
+                    if self._initialize_inference_engine():
+                        self.write_diagnostic_info({
+                        'event': 'initialization_success',
+                        'attempt': attempt + 1
+                    })
+                        return
+                    else:
+                        self.write_diagnostic_info({
+                            'event': 'initialization_failed_despite_model_available',
+                            'attempt': attempt + 1,
+                            'error': self._initialization_error
+                        })
+                else:
+                    self.write_diagnostic_info({
+                        'event': 'model_not_available',
+                        'attempt': attempt + 1
+                    })
+                    
+            except Exception as e:
+                self.write_diagnostic_info({
+                    'event': 'initialization_retry_error',
+                    'attempt': attempt + 1,
+                    'error': str(e),
+                    'error_type': type(e).__name__
+                })
+                if attempt == max_retries - 1:
+                    self._initialization_error = f"Failed after {max_retries} attempts: {str(e)}"
 
     def _initialize_inference_engine(self) -> bool:
-        """Initialize the inference engine with the downloaded model."""
+        """Initialize the inference engine with enhanced reliability for packaged apps."""
         try:
             model_path = self.model_manager.model_path
+            
+            # Validate model path before creating inference engine
+            validation_result = self.model_manager.validate_model_path_for_packaged_app()
+            if not validation_result["validation_successful"]:
+                self._initialization_error = f"Model validation failed: {validation_result['error_message']}"
+                print(f"Model validation details: {validation_result}")
+                return False
+            
+            # Create inference config optimized for packaged apps
             inference_config = self.config.inference_config or InferenceConfig()
-
+            # Reduce thread count for packaged apps to avoid resource conflicts
+            if inference_config.n_threads > 2:
+                inference_config.n_threads = 2
+            
             self.inference_engine = AIInferenceEngine(model_path, inference_config)
 
-            # Auto-load model if configured
+            # Auto-load model if configured with enhanced retry
             if self.config.auto_load_model:
-                success = self.inference_engine.load_model()
+                success = self.inference_engine.load_model(retry_count=5)  # More retries for packaged apps
                 if not success:
                     self._initialization_error = self.inference_engine._load_error
+                    # Run diagnostics to help debug issues
+                    diagnosis = self.inference_engine.diagnose_model_issues()
+                    print(f"Model loading failed - Diagnosis: {diagnosis}")
                     return False
+                else:
+                    print("Model loaded successfully in inference engine")
 
             self._service_ready = True
             return True
@@ -108,6 +186,7 @@ class AIReflectionService:
             self._initialization_error = (
                 f"Failed to initialize inference engine: {str(e)}"
             )
+            print(f"Inference engine initialization error: {e}")
             return False
 
     @property
@@ -153,12 +232,32 @@ class AIReflectionService:
         }
 
     def ensure_model_loaded(self) -> bool:
-        """Ensure the AI model is loaded and ready for inference."""
+        """Ensure the AI model is loaded and ready for inference with enhanced reliability."""
         if not self.is_available:
-            return False
+            # Try to reinitialize if service is not available
+            if self.model_manager.is_model_available():
+                print("Service not available but model exists - attempting reinitialization")
+                if self._initialize_inference_engine():
+                    print("Reinitialization successful")
+                else:
+                    print("Reinitialization failed")
+                    return False
+            else:
+                return False
 
         if not self.is_model_loaded:
-            return self.inference_engine.load_model()
+            print("Model not loaded - attempting to load with retries")
+            success = self.inference_engine.load_model(retry_count=5)
+            if success:
+                print("Model loaded successfully")
+            else:
+                print(f"Model loading failed: {self.inference_engine._load_error}")
+            return success
+
+        # Validate model health
+        if not self.inference_engine.validate_model_health():
+            print("Model health check failed - attempting reload")
+            return self.inference_engine.load_model(retry_count=3)
 
         return True
 
@@ -432,21 +531,34 @@ class AIReflectionService:
         }
 
     def diagnose_and_repair(self) -> Dict[str, Any]:
-        """Diagnose AI service issues and attempt automatic repair."""
+        """Enhanced diagnosis and repair for AI service issues in packaged apps."""
         diagnosis = {
             "issues_found": [],
             "repairs_attempted": [],
             "repair_success": True,
-            "final_status": "unknown"
+            "final_status": "unknown",
+            "model_validation": {},
+            "inference_diagnosis": {}
         }
 
-        # Check model file integrity
-        if not self.model_manager.is_model_available():
-            diagnosis["issues_found"].append("Model file not available or corrupted")
-            # Could attempt to re-download here in future
+        print("Starting AI service diagnosis...")
+
+        # Enhanced model file validation
+        model_validation = self.model_manager.validate_model_path_for_packaged_app()
+        diagnosis["model_validation"] = model_validation
+        
+        if not model_validation["validation_successful"]:
+            diagnosis["issues_found"].append(f"Model validation failed: {model_validation['error_message']}")
+            # In future, could attempt to re-download here
+        
+        # Enhanced inference engine diagnosis
+        if self.inference_engine:
+            inference_diagnosis = self.inference_engine.diagnose_model_issues()
+            diagnosis["inference_diagnosis"] = inference_diagnosis
+            diagnosis["issues_found"].extend(inference_diagnosis["issues_found"])
         
         # Check if inference engine needs reinitialization
-        if not self.is_available and self.model_manager.is_model_available():
+        if not self.is_available and model_validation["validation_successful"]:
             diagnosis["issues_found"].append("Model available but inference engine not ready")
             diagnosis["repairs_attempted"].append("Attempting to reinitialize inference engine")
             try:
@@ -457,6 +569,20 @@ class AIReflectionService:
                     diagnosis["repair_success"] = False
             except Exception as e:
                 diagnosis["repairs_attempted"].append(f"❌ Error during reinitialization: {str(e)}")
+                diagnosis["repair_success"] = False
+
+        # Test model loading if engine is available
+        if self.is_available and not self.is_model_loaded:
+            diagnosis["issues_found"].append("Inference engine available but model not loaded")
+            diagnosis["repairs_attempted"].append("Attempting to load model")
+            try:
+                if self.ensure_model_loaded():
+                    diagnosis["repairs_attempted"].append("✅ Model loaded successfully")
+                else:
+                    diagnosis["repairs_attempted"].append("❌ Failed to load model")
+                    diagnosis["repair_success"] = False
+            except Exception as e:
+                diagnosis["repairs_attempted"].append(f"❌ Error loading model: {str(e)}")
                 diagnosis["repair_success"] = False
 
         # Check cache directory
@@ -473,7 +599,45 @@ class AIReflectionService:
         # Final status check
         diagnosis["final_status"] = "available" if self.is_available else "unavailable"
         
+        print(f"Diagnosis complete. Final status: {diagnosis['final_status']}")
+        if diagnosis["issues_found"]:
+            print(f"Issues found: {len(diagnosis['issues_found'])}")
+        if diagnosis["repairs_attempted"]:
+            print(f"Repairs attempted: {len(diagnosis['repairs_attempted'])}")
+        
         return diagnosis
+    
+    def write_diagnostic_info(self, info: Dict[str, Any]) -> None:
+        """Write diagnostic information to file for packaged app debugging."""
+        try:
+            # Ensure parent directory exists
+            self._diagnostic_file.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Load existing diagnostics or create new
+            diagnostics = []
+            if self._diagnostic_file.exists():
+                try:
+                    with open(self._diagnostic_file, 'r', encoding='utf-8') as f:
+                        diagnostics = json.load(f)
+                except (json.JSONDecodeError, IOError):
+                    diagnostics = []
+            
+            # Add new diagnostic entry with timestamp
+            diagnostics.append({
+                'timestamp': datetime.now().isoformat(),
+                'info': info
+            })
+            
+            # Keep only last 50 entries to prevent file from growing too large
+            diagnostics = diagnostics[-50:]
+            
+            # Write back to file
+            with open(self._diagnostic_file, 'w', encoding='utf-8') as f:
+                json.dump(diagnostics, f, indent=2, ensure_ascii=False)
+                
+        except Exception:
+            # Silently fail diagnostic writes to avoid interfering with main functionality
+            pass
 
     def unload_model(self) -> None:
         """Unload AI model to free memory."""
