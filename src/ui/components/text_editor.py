@@ -9,7 +9,7 @@ import asyncio
 import threading
 from typing import Callable, Optional
 import flet as ft
-from ..theme import ThemeManager, ThemedCard, SPACING, COMPONENT_SIZES, TYPO_SCALE
+from ui.theme import ThemeManager, ThemedCard, SPACING, COMPONENT_SIZES, TYPO_SCALE
 
 
 class AutoSaveManager:

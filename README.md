@@ -72,7 +72,7 @@ Download the latest release for your platform:
 
 #### First Time Setup (with onboarding)
 ```bash
-uv run python -m dana_journal.main
+uv run python src/main.py
 ```
 
 This will guide you through the 4-step onboarding process:
@@ -87,24 +87,27 @@ This will guide you through the 4-step onboarding process:
 uv run python tests/reset_onboarding.py
 
 # Then run the app
-uv run python -m dana_journal.main
+uv run python src/main.py
 ```
 
 #### Skip Onboarding (after first setup)
 Once you've completed onboarding, simply run:
 ```bash
-uv run python -m dana_journal.main
+uv run python src/main.py
 ```
 
 The app will remember your settings and open directly to the main interface.
 
 ## 🏗️ Development
 
-### Project Structure
+### Project Structure (Flet-Compliant Layout)
+
+> **Note**: The project has been restructured to follow Flet's standard layout for better packaging compatibility. All modules now reside directly in `src/` with absolute imports.
 
 ```
-src/dana_journal/
+src/
 ├── main.py              # Main application entry point
+├── assets/              # Icons and branding assets
 ├── config/
 │   └── app_config.py    # Configuration management
 ├── ui/
@@ -128,7 +131,7 @@ src/dana_journal/
 uv sync
 
 # Run the application
-uv run python -m dana_journal.main
+uv run python src/main.py
 
 # Run tests
 uv run pytest

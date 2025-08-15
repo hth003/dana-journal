@@ -9,7 +9,7 @@ from datetime import date
 from pathlib import Path
 from typing import Dict, List, Optional, Callable, Set
 import flet as ft
-from ..theme import (
+from ui.theme import (
     ThemeManager,
     ThemedContainer,
     ThemedText,
@@ -17,7 +17,7 @@ from ..theme import (
     COMPONENT_SIZES,
     TYPO_SCALE,
 )
-from ...storage import FileManager, JournalEntry
+from storage import FileManager, JournalEntry
 
 
 class FileTreeNode:

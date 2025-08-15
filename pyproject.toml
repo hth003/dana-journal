@@ -19,34 +19,33 @@ dependencies = [
 ]
 
 [project.scripts]
-dana-journal = "dana_journal.main:main"
-dana = "dana_journal.main:main"
+dana-journal = "main:main"
+dana = "main:main"
 
 [project.gui-scripts]
-dana = "dana_journal.main:main"
+dana = "main:main"
 
 [tool.flet]
 # Product Information
 product = "Dana - safe journal space"
 company = "Dana Team"
 copyright = "Copyright (C) 2025 Dana Team"
-build_number = 2
+build_number = 5
 build_version = "0.1.0"
 
 # App Configuration
 [tool.flet.app]
-module = "main"
-path = "src/dana_journal"
+path = "src"
 
 # Icons Configuration
 [tool.flet.icons]
 # Universal icon (fallback)
-icon = "assets/icons/dana_icon_512x512.png"
+icon = "src/assets/icons/dana_icon_512x512.png"
 # Platform-specific icons
-icon_macos = "assets/icons/dana_icon_512x512.png"
-icon_windows = "assets/icons/dana_icon_256x256.png"
-icon_linux = "assets/icons/dana_icon_256x256.png"
-icon_web = "assets/icons/dana_icon_256x256.png"
+icon_macos = "src/assets/icons/dana_icon_512x512.png"
+icon_windows = "src/assets/icons/dana_icon_256x256.png"
+icon_linux = "src/assets/icons/dana_icon_256x256.png"
+icon_web = "src/assets/icons/dana_icon_256x256.png"
 
 # App Metadata
 [tool.flet.metadata]
@@ -123,6 +122,9 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
 
 [tool.black]
 line-length = 88

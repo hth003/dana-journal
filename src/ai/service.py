@@ -77,7 +77,7 @@ class AIReflectionService:
         """Check if we should retry model validation."""
         # Only retry if the model file exists but validation failed
         try:
-            from ..config import app_config
+            from config import app_config
             return (
                 app_config.is_ai_model_downloaded() and  # Config says it's downloaded
                 self.model_manager.model_path.exists()   # File exists on disk

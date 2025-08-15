@@ -7,7 +7,7 @@ below the text editor with gentle, encouraging guidance.
 
 import flet as ft
 from typing import Optional, Callable, Dict, Any
-from ..theme import ThemeManager, ThemedText, SPACING, TYPO_SCALE, RADIUS
+from ui.theme import ThemeManager, ThemedText, SPACING, TYPO_SCALE, RADIUS
 
 
 class DanaWisdomComponent:

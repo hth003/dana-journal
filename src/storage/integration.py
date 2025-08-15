@@ -11,7 +11,7 @@ from typing import Optional, Callable, Dict, Any, Set
 
 from .file_manager import FileManager, JournalEntry
 from .auto_save import AutoSaveManager, AutoSaveConfig, AutoSaveStatus
-from ..config import app_config
+from config import app_config
 
 
 class StorageIntegrationService:

@@ -9,7 +9,7 @@ import calendar
 from datetime import datetime
 from typing import Set, Callable, Optional
 import flet as ft
-from ..theme import ThemeManager, ThemedContainer, ThemedText, SPACING
+from ui.theme import ThemeManager, ThemedContainer, ThemedText, SPACING
 
 
 class CalendarComponent:

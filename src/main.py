@@ -7,22 +7,22 @@ A privacy-first desktop journaling application with local AI-powered insights.
 from datetime import datetime, timedelta, date
 from typing import Set, Dict, Any, Optional
 import flet as ft
-from .ui.theme import (
+from ui.theme import (
     theme_manager,
     ThemedText,
     SPACING,
     COMPONENT_SIZES,
 )
-from .ui.components import (
+from ui.components import (
     OnboardingFlow,
     CalendarComponent,
     EnhancedTextEditor,
     FileExplorer,
     AIReflectionComponent,
 )
-from .config import app_config
-from .storage.file_manager import FileManager, JournalEntry
-from .ai import AIReflectionService, AIServiceConfig
+from config import app_config
+from storage.file_manager import FileManager, JournalEntry
+from ai import AIReflectionService, AIServiceConfig
 
 
 class JournalVaultApp:
@@ -1094,7 +1094,7 @@ def main() -> None:
     import os
 
     # Get assets directory path
-    assets_dir = os.path.join(os.path.dirname(__file__), "..", "..", "assets")
+    assets_dir = os.path.join(os.path.dirname(__file__), "assets")
     assets_dir = os.path.abspath(assets_dir)
 
     print("🚀 Starting Dana")

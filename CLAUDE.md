@@ -10,7 +10,8 @@ This is DANA - safe journal space, a privacy-first desktop journaling applicatio
 
 ### Running the Application
 ```bash
-uv run python -m dana_journal.main
+# Development mode
+uv run python src/main.py
 ```
 
 ### Development Setup
@@ -71,10 +72,14 @@ uv run python tests/reset_onboarding.py
 
 ## Project Architecture
 
-### Core Structure
+> **Note**: The project has been restructured to follow Flet's standard layout for better packaging compatibility. All modules now reside directly in `src/` with absolute imports instead of the previous `src/dana_journal/` nested structure.
+
+### Core Structure (Flet-Compliant Layout)
 ```
-src/dana_journal/
+src/
 ├── main.py              # Main application entry point with JournalVaultApp class
+├── assets/              # Application assets and icons
+│   └── icons/           # Dana branding icons in multiple sizes
 ├── config/
 │   └── app_config.py    # Configuration management and persistence
 ├── ui/
@@ -95,21 +100,15 @@ src/dana_journal/
     ├── inference.py           # Local AI inference engine with llama-cpp-python
     ├── service.py             # AI reflection service orchestration
     └── prompts.py             # Complete prompt engineering system
-
-# Note: Assets are located in the project root
-assets/
-└── icons/                     # Application icons and branding assets
-    ├── dana_logo.svg          # Main Dana logo
-    └── dana_icon_*.png        # App icons in multiple sizes
 ```
 
 ### Key Components
 
-**JournalVaultApp (main.py)**: Central application class managing page state, UI components, and user interactions. Uses Obsidian-inspired layout with left sidebar containing calendar and file explorer.
+**JournalVaultApp (src/main.py)**: Central application class managing page state, UI components, and user interactions. Uses Obsidian-inspired layout with left sidebar containing calendar and file explorer.
 
-**Theme System (ui/theme.py)**: Dana theme system with warm, companion-like color palette featuring terracotta primary (#E07A5F), sage green accents (#81B29A), and warm cream surfaces. Provides `ThemedContainer`, `ThemedText`, and `ThemedCard` components for consistent styling.
+**Theme System (src/ui/theme.py)**: Dana theme system with warm, companion-like color palette featuring terracotta primary (#E07A5F), sage green accents (#81B29A), and warm cream surfaces. Provides `ThemedContainer`, `ThemedText`, and `ThemedCard` components for consistent styling.
 
-**Onboarding Flow (ui/components/onboarding.py)**: Enhanced 4-step process:
+**Onboarding Flow (src/ui/components/onboarding.py)**: Enhanced 4-step process:
 1. Welcome and feature overview
 2. Privacy explanation 
 3. **Dual-mode vault setup** with radio button selection:
@@ -119,19 +118,19 @@ assets/
    - Context-aware completion buttons
 4. **AI Setup**: Optional Qwen2.5-3B-Instruct model download with progress tracking
 
-**Calendar Component (ui/components/calendar.py)**: Interactive month navigation with entry indicators, date selection, and "Today" button. Integrates with journal entry system.
+**Calendar Component (src/ui/components/calendar.py)**: Interactive month navigation with entry indicators, date selection, and "Today" button. Integrates with journal entry system.
 
-**Dana's Wisdom Component (ui/components/ai_reflection.py)**: Collapsible companion wisdom component for displaying AI-generated insights, questions, and themes with enhanced regeneration UX, smooth animations, and persistent display.
+**Dana's Wisdom Component (src/ui/components/ai_reflection.py)**: Collapsible companion wisdom component for displaying AI-generated insights, questions, and themes with enhanced regeneration UX, smooth animations, and persistent display.
 
-**File Manager (storage/file_manager.py)**: Complete file management system with SQLite indexing, YAML frontmatter parsing, entry CRUD operations, search capabilities, and vault validation.
+**File Manager (src/storage/file_manager.py)**: Complete file management system with SQLite indexing, YAML frontmatter parsing, entry CRUD operations, search capabilities, and vault validation.
 
-**AI Download Manager (ai/download_model.py)**: Handles downloading and managing the Qwen2.5-3B-Instruct model with progress tracking, system requirements checking, and file validation.
+**AI Download Manager (src/ai/download_model.py)**: Handles downloading and managing the Qwen2.5-3B-Instruct model with progress tracking, system requirements checking, and file validation.
 
-**AI Inference Engine (ai/inference.py)**: Local AI inference using llama-cpp-python with thread-safe, async-compatible generation, memory management, and model health monitoring.
+**AI Inference Engine (src/ai/inference.py)**: Local AI inference using llama-cpp-python with thread-safe, async-compatible generation, memory management, and model health monitoring.
 
-**AI Reflection Service (ai/service.py)**: Orchestrates the complete AI pipeline, combining inference, prompt engineering, and caching to provide journal reflection capabilities with warm, companion-like insights.
+**AI Reflection Service (src/ai/service.py)**: Orchestrates the complete AI pipeline, combining inference, prompt engineering, and caching to provide journal reflection capabilities with warm, companion-like insights.
 
-**Configuration (config/app_config.py)**: Persistent settings stored in `~/.dana_journal/config.json` including onboarding status, storage path, window state, and AI configuration.
+**Configuration (src/config/app_config.py)**: Persistent settings stored in `~/.dana_journal/config.json` including onboarding status, storage path, window state, and AI configuration.
 
 ### Data Storage Format
 

@@ -9,8 +9,8 @@ import os
 from typing import Callable, Optional
 from pathlib import Path
 import flet as ft
-from ..theme import ThemeManager, ThemedContainer, ThemedText, SPACING
-from ...ai.download_model import (
+from ui.theme import ThemeManager, ThemedContainer, ThemedText, SPACING
+from ai.download_model import (
     ModelDownloadManager,
     DownloadProgress,
     format_bytes,

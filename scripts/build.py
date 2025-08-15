@@ -24,9 +24,23 @@ class BuildScript:
         """Clean previous build directories"""
         for directory in [self.build_dir, self.dist_dir]:
             if directory.exists():
-                shutil.rmtree(directory)
-                print(f"Cleaned {directory}")
+                try:
+                    shutil.rmtree(directory)
+                    print(f"Cleaned {directory}")
+                except (OSError, PermissionError) as e:
+                    print(f"Warning: Could not fully clean {directory}: {e}")
+                    # Try to fix permissions and retry
+                    try:
+                        import subprocess
+                        subprocess.run(['chmod', '-R', '755', str(directory)], check=False)
+                        shutil.rmtree(directory)
+                        print(f"Cleaned {directory} after permission fix")
+                    except Exception as e2:
+                        print(f"Error: Failed to clean {directory}: {e2}")
+                        print("Please manually remove the directory and try again")
+                        return False
             directory.mkdir(exist_ok=True)
+        return True
     
     def increment_build_number(self):
         """Increment build number in pyproject.toml"""
@@ -112,7 +126,8 @@ class BuildScript:
         print(f"\n=== Building DANA Journal for {platform.upper()} ===")
         
         # Clean build directories
-        self.clean_build_dirs()
+        if not self.clean_build_dirs():
+            return False
         
         # Increment build number for production builds
         if not dev_mode:

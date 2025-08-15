@@ -119,13 +119,15 @@
 
 ## Technical Architecture (Current Implementation)
 
-### Implemented Project Structure ✅
+> **Note**: The project has been restructured to follow Flet's standard layout requirements for better packaging compatibility. All modules now reside directly in `src/` with absolute imports instead of nested package structure.
+
+### Implemented Project Structure ✅ (Flet-Compliant Layout)
 ```
 journal-vault/
-├── pyproject.toml              # ✅ uv configuration with clean dependencies
-├── src/journal_vault/
-│   ├── __init__.py             # ✅ Package initialization
+├── pyproject.toml              # ✅ uv configuration with clean dependencies  
+├── src/                        # ✅ Flet-compliant structure
 │   ├── main.py                 # ✅ Complete app controller (600+ lines)
+│   ├── assets/                 # ✅ Icons and branding assets
 │   ├── ui/
 │   │   ├── __init__.py         # ✅ UI module exports
 │   │   ├── theme.py            # ✅ Comprehensive dark theme system (221 lines)
