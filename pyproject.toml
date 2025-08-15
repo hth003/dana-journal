@@ -1,7 +1,7 @@
 [project]
 name = "dana-journal"
 version = "0.1.0"
-description = "Dana - safe journal space: A privacy-first desktop journaling companion with local AI support"
+description = "Your privacy-first journaling companion with local AI insights"
 authors = [
     {name = "Dana Team"}
 ]
@@ -27,30 +27,22 @@ dana = "main:main"
 
 [tool.flet]
 # Product Information
-product = "Dana - safe journal space"
+product = "Dana"
 company = "Dana Team"
 copyright = "Copyright (C) 2025 Dana Team"
-build_number = 5
+build_number = 6
 build_version = "0.1.0"
 
 # App Configuration
 [tool.flet.app]
 path = "src"
 
-# Icons Configuration
-[tool.flet.icons]
-# Universal icon (fallback)
-icon = "src/assets/icons/dana_icon_512x512.png"
-# Platform-specific icons
-icon_macos = "src/assets/icons/dana_icon_512x512.png"
-icon_windows = "src/assets/icons/dana_icon_256x256.png"
-icon_linux = "src/assets/icons/dana_icon_256x256.png"
-icon_web = "src/assets/icons/dana_icon_256x256.png"
+# Icons auto-detected by Flet from src/assets/ directory
 
 # App Metadata
 [tool.flet.metadata]
-short_description = "Privacy-first desktop journaling companion with local AI support"
-long_description = "Dana - safe journal space is a privacy-first desktop journaling application that keeps all your data local while providing AI-powered insights through your personal writing companion."
+short_description = "Your privacy-first journaling companion with local AI insights"
+long_description = "Dana is your safe journal space - a privacy-first desktop journaling companion that keeps all your thoughts and data completely local on your device. Get gentle AI-powered insights and reflections from your personal writing companion, all while maintaining complete privacy. No cloud, no tracking, just you and your thoughts with a caring digital companion by your side."
 keywords = ["journal", "privacy", "AI", "writing", "personal", "local", "companion"]
 category = "productivity"
 
