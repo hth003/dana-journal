@@ -1,0 +1,10 @@
+{
+  "id": "dana-journal",
+  "name": "Dana",
+  "version": "1.0.0",
+  "minAppVersion": "1.4.0",
+  "description": "A warm journaling companion that reads your vault and reflects with you.",
+  "author": "Dana",
+  "authorUrl": "https://github.com/dana-journal",
+  "isDesktopOnly": true
+}

@@ -1,0 +1,319 @@
+/* ── Dana design tokens ───────────────────────────────────────────────── */
+.dana-panel {
+  --dana-primary: #E07A5F;
+  --dana-primary-hover: #d4694d;
+  --dana-secondary: #81B29A;
+  --dana-response-bg: rgba(224, 122, 95, 0.08);
+  --dana-avatar-size: 28px;
+  --dana-spacing-sm: 8px;
+  --dana-spacing-md: 16px;
+  --dana-spacing-lg: 24px;
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-family: var(--font-interface);
+  color: var(--text-normal);
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+.dana-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--dana-spacing-md);
+  border-bottom: 1px solid var(--background-modifier-border);
+  flex-shrink: 0;
+}
+
+.dana-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dana-avatar {
+  font-size: 18px;
+  color: var(--dana-primary);
+  line-height: 1;
+}
+
+.dana-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-normal);
+}
+
+.dana-settings-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+  border-radius: var(--radius-s);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.dana-settings-btn:hover {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+}
+
+/* ── Content area ────────────────────────────────────────────────────── */
+.dana-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--dana-spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--dana-spacing-md);
+}
+
+/* ── Idle state ──────────────────────────────────────────────────────── */
+.dana-greeting {
+  font-size: 14px;
+  color: var(--text-normal);
+  line-height: 1.5;
+  margin-bottom: var(--dana-spacing-sm);
+}
+
+.dana-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dana-chip {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  padding: 8px 12px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-muted);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  min-height: 36px;
+}
+
+.dana-chip:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+  border-color: var(--dana-primary);
+}
+
+.dana-footer-note {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: auto;
+}
+
+/* ── Loading state ───────────────────────────────────────────────────── */
+.dana-loading-msg {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.dana-dots {
+  font-size: 20px;
+  color: var(--dana-primary);
+  letter-spacing: 4px;
+  animation: dana-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes dana-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* ── Streaming state ─────────────────────────────────────────────────── */
+/* (reuses dana-response-card) */
+
+/* ── Response card ───────────────────────────────────────────────────── */
+.dana-response-card {
+  background: var(--dana-response-bg);
+  border-radius: var(--radius-m);
+  padding: var(--dana-spacing-md);
+}
+
+.dana-response-text {
+  font-family: var(--font-text);
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-normal);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Conversation thread ─────────────────────────────────────────────── */
+.dana-thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dana-spacing-md);
+  overflow-y: auto;
+  max-height: 50vh;
+  padding-right: 4px;
+}
+
+.dana-user-msg {
+  background: var(--background-secondary);
+  border-radius: var(--radius-m);
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--text-normal);
+  align-self: flex-end;
+  max-width: 90%;
+  line-height: 1.5;
+}
+
+/* ── Input ───────────────────────────────────────────────────────────── */
+.dana-input-wrap {
+  flex-shrink: 0;
+}
+
+.dana-input {
+  width: 100%;
+  min-height: 80px;
+  max-height: 160px;
+  resize: vertical;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  padding: 10px 12px;
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--text-normal);
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.dana-input:focus {
+  outline: none;
+  border-color: var(--dana-primary);
+}
+
+.dana-input::placeholder {
+  color: var(--text-faint);
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+.dana-btn-primary {
+  width: 100%;
+  background: var(--dana-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-m);
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 36px;
+  transition: background 0.15s;
+}
+
+.dana-btn-primary:hover {
+  background: var(--dana-primary-hover);
+}
+
+.dana-btn-secondary {
+  width: 100%;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  padding: 10px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  min-height: 36px;
+  transition: background 0.15s;
+}
+
+.dana-btn-secondary:hover {
+  background: var(--background-modifier-hover);
+}
+
+.dana-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.dana-btn-ghost {
+  flex: 1;
+  background: none;
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  min-height: 36px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.dana-btn-ghost:hover {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+}
+
+/* ── Error states ────────────────────────────────────────────────────── */
+.dana-error-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dana-spacing-md);
+}
+
+.dana-error-msg {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ── Setup / first-run ───────────────────────────────────────────────── */
+.dana-setup-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: var(--dana-spacing-lg) var(--dana-spacing-md);
+  text-align: center;
+}
+
+.dana-setup-avatar {
+  font-size: 40px;
+  color: var(--dana-primary);
+  line-height: 1;
+}
+
+.dana-setup-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.dana-setup-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  max-width: 220px;
+}
+
+/* ── Settings tab ────────────────────────────────────────────────────── */
+.dana-settings-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 4px 0 var(--dana-spacing-md);
+  padding: 8px 12px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-s);
+  line-height: 1.5;
+}
+
+/* ── Min-width collapse: hide avatar at narrow widths ────────────────── */
+@container (max-width: 240px) {
+  .dana-avatar { display: none; }
+}
