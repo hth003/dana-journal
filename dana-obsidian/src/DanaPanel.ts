@@ -297,14 +297,14 @@ export class DanaPanel extends ItemView {
         ? this.app.metadataCache.getFileCache(activeFile)?.frontmatter ?? null
         : null;
 
-      const { entries } = await this.contextResolver.resolve(
+      const { entries, activeIsJournalNote } = await this.contextResolver.resolve(
         activeFile,
         frontmatter,
         this.plugin.settings
       );
 
       if (entries.length === 0) {
-        this.state = activeFile ? DanaState.EMPTY_NOTES : DanaState.ERROR_NO_NOTES;
+        this.state = activeIsJournalNote ? DanaState.EMPTY_NOTES : DanaState.ERROR_NO_NOTES;
         this.render();
         return;
       }

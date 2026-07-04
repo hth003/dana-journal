@@ -135,11 +135,15 @@ export class DanaSettingsTab extends PluginSettingTab {
   }
 
   private renderOpenAISettings(containerEl: HTMLElement): void {
-    const encryptionAvailable = this.plugin.secretStore.isAvailable();
+    const hasStoredKey = this.plugin.settings.openaiKeyEncrypted.length > 0;
+    const isEncrypted = hasStoredKey
+      ? this.plugin.settings.openaiKeyEncryptionAvailable
+      : this.plugin.secretStore.isAvailable();
+
     new Setting(containerEl)
       .setName('OpenAI API key')
       .setDesc(
-        encryptionAvailable
+        isEncrypted
           ? 'Encrypted at rest using your OS keychain. Never stored in plain text.'
           : "OS-level encryption isn't available on this device, so this is stored as plain text in the plugin's data.json."
       )
@@ -150,6 +154,7 @@ export class DanaSettingsTab extends PluginSettingTab {
           .onChange(async value => {
             this.plugin.setOpenAIKey(value.trim());
             await this.plugin.saveSettings();
+            this.display();
           });
         text.inputEl.type = 'password';
       });
