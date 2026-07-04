@@ -56,7 +56,8 @@ DANA SIDEBAR PANEL
    │                          │
 IDLE STATE            first run → SETUP WIZARD
    │
-   │ user clicks "Reflect on today"
+   │ user clicks "Reflect on this entry" (open journal note only)
+   │           or "Reflect on my week" (last N entries by date)
    ▼
 LOADING STATE (2-3s)
    │
@@ -81,15 +82,16 @@ All 10 states fully specified:
 | State | What User Sees | Primary Action |
 |-------|---------------|----------------|
 | SETUP (1st run) | 3-step wizard: folder → AI mode → done | "Get started" |
-| IDLE | Dana avatar + 3 quick-prompt chips + time-aware greeting | "Reflect on today" |
-| LOADING | "Dana is reading your recent notes..." + animated dots | [Cancel] |
+| IDLE | Dana avatar + time-aware greeting + 2 mode buttons with subtitles | "Reflect on this entry" / "Reflect on my week" |
+| LOADING | "Dana is reading this note..." (entry) / "Dana is reading your recent notes..." (week) + animated dots | [Cancel] |
 | STREAMING | Response text appearing token by token with cursor | [Stop] |
-| DONE | Full reflection in warm card + text input | "Continue" / "Copy" |
+| DONE | Structured reflection in warm card (markdown-rendered) + text input | Text input / "Copy" |
 | CONVERSATION | Chat thread (Dana, user, Dana...) | Text input + Send |
 | ERROR-NO-AI | "Dana needs a brain" card | "Set up AI →" |
-| ERROR-TIMEOUT | "Taking longer than usual..." | [Retry] [Cancel] |
+| ERROR-TIMEOUT | "Something went wrong" + detail | [Retry] [Cancel] |
 | ERROR-NO-NOTES | "No journal notes found in [folder]" | "Change folder →" |
-| EMPTY-NOTES | "Start writing and Dana will reflect" | [Dismiss] |
+| EMPTY-NOTES | "Write a few more lines and I'll reflect with you." | [Dismiss] |
+| CUT-OFF (marker) | "Response was cut off" muted line inside the response card | [Retry] |
 | DOWNLOADING | Progress bar + "Downloading Dana's brain (X MB of Y MB)" | [Cancel] |
 
 ### State coverage per feature
@@ -119,23 +121,21 @@ All 10 states fully specified:
 │  begins?                   │
 │                             │
 │  ┌─────────────────────┐   │
-│  │  Reflect on today   │   │  ← primary CTA (terracotta bg)
+│  │ Reflect on this     │   │  ← primary CTA (terracotta bg)
+│  │ entry               │   │
+│  │ the note you have   │   │  ← subtitle: --text-muted, 0.85em
+│  │ open                │   │
 │  └─────────────────────┘   │
-│                             │
-│  ┌──────────────────────┐  │
-│  │ What's been on my    │  │  ← quick prompt chip (subtle)
-│  │ mind?                │  │
-│  └──────────────────────┘  │
-│  ┌──────────────────────┐  │
-│  │ Process a feeling    │  │
-│  └──────────────────────┘  │
-│  ┌──────────────────────┐  │
-│  │ How have I been      │  │
-│  │ lately?              │  │
-│  └──────────────────────┘  │
-│                             │
-│ Reading 7 recent notes     │  ← muted text, bottom
+│  ┌─────────────────────┐   │
+│  │ Reflect on my week  │   │  ← secondary/outline
+│  │ your last 7 entries │   │  ← "7" = maxContextEntries setting
+│  └─────────────────────┘   │
 └─────────────────────────────┘
+
+Disabled entry button (active note is not a journal note): opacity 0.5,
+cursor not-allowed, subtitle swaps to "open a journal note first",
+aria-disabled="true" + aria-describedby → the subtitle span. Never
+truncate the subtitle — it explains the disabled state.
 ```
 
 ### LOADING STATE
@@ -162,13 +162,16 @@ All 10 states fully specified:
 │ ◉ Dana              [gear] │
 │                             │
 │ ┌─────────────────────────┐ │
-│ │ I noticed you've written │ │  ← warm response card
-│ │ about the project stress │ │     subtle terracotta tint bg
-│ │ three times this week.   │ │
+│ │ You've written about the │ │  ← warm response card
+│ │ project stress three     │ │     subtle terracotta tint bg
+│ │ times this week.         │ │     (markdown-rendered)
 │ │                          │ │
-│ │ What does it feel like   │ │  ← Dana's question (italic)
-│ │ to sit with that right   │ │
-│ │ now?                     │ │
+│ │ **Worth noticing:**      │ │  ← fixed ritual label,
+│ │ • insight one            │ │     byte-identical every time
+│ │ • insight two            │ │
+│ │                          │ │
+│ │ What does it feel like   │ │  ← ONE closing question (italic)
+│ │ to sit with that?        │ │
 │ └─────────────────────────┘ │
 │                             │
 │ ┌──────────────────────┐   │
@@ -290,15 +293,16 @@ Rules:
 | 6pm – midnight | "How are you winding down?" |
 | No recent entries | "Whenever you're ready to write, I'm here." |
 
-### Quick prompt chips (always visible in IDLE)
+### Mode buttons (IDLE)
 
-- "What's been on my mind?"
-- "Process a feeling"
-- "How have I been lately?"
+- "Reflect on this entry" — subtitle "the note you have open"
+  (disabled + "open a journal note first" when the active note is not a journal note)
+- "Reflect on my week" — subtitle "your last N entries" (N = maxContextEntries)
 
 ### Loading copy
 
-- "Dana is reading your recent notes..."
+- entry mode: "Dana is reading this note..."
+- week mode: "Dana is reading your recent notes..."
 
 ### Error copy
 
@@ -307,7 +311,8 @@ Rules:
 | No AI configured | "Dana needs a brain to reflect with you." | "Set up AI →" |
 | AI timeout | "Taking longer than usual. Still thinking..." | [Retry] [Cancel] |
 | No notes found | "No journal notes found in [folder]. Is this the right folder?" | "Change folder →" |
-| No notes yet | "Start writing, and Dana will reflect with you." | [Dismiss] |
+| Entry too short | "Write a few more lines and I'll reflect with you." | [Dismiss] |
+| Response cut off | "Response was cut off" — muted italic line inside the card | [Retry] |
 | Checksum fail | "Something went wrong with the download. Let's try again." | [Retry] |
 
 ---
@@ -318,8 +323,8 @@ Two only. No more.
 
 1. **Ribbon icon** (always visible): click to toggle Dana panel open/closed
 2. **Command palette**: three commands registered
-   - "Dana: Reflect on today"
-   - "Dana: How have I been lately?"
+   - "Dana: Reflect on this entry" (gated: Notice "Open a journal note first" otherwise)
+   - "Dana: Reflect on my week"
    - "Dana: Open panel"
 
 Do NOT add any inline buttons inside the note editor. Obsidian users notice and dislike plugins that modify note rendering.
@@ -350,18 +355,37 @@ Do NOT add any inline buttons inside the note editor. Obsidian users notice and 
 
 Dana remembers within a day. Users can read, edit, or delete the record.
 
-Storage format:
-- File path: `{journal-folder}/.dana/YYYY-MM-DD-conversation.md`
-- Format: plain markdown, alternating `**Dana:**` and `**Me:**` blocks
-- Dana reads the most recent conversation file on panel open for continuity
+Storage format (v2):
+- File path: `{journal-folder}/.dana/YYYY-MM-DD-conversation.md` — the date is
+  LOCAL time and fixed at conversation start (a chat crossing midnight stays in
+  the file it began in)
+- YAML frontmatter (`version`, `date`) + sessions marked by
+  `<!-- dana:session {"mode":…,"contextPaths":…} -->`, messages by
+  `<!-- dana:msg role=dana|user -->` comment lines — invisible in reading view,
+  collision-proof against hand-edits, multi-paragraph messages survive intact
+- One file holds all of a day's sessions; "Start fresh" appends a new session
+  instead of overwriting
+- Legacy v1 files (`**Dana:**` / `**Me:**` blocks) load best-effort as one session
 
 Example:
 ```markdown
-**Dana:** I noticed you've written about the project stress three times this week. What does it feel like to sit with that right now?
+---
+version: 2
+date: 2026-07-04
+---
 
-**Me:** Honestly exhausting. I feel like I keep circling the same thing.
+<!-- dana:session {"mode":"entry","contextPaths":["Daily Notes/2026-07-04.md"]} -->
 
-**Dana:** What would it mean to stop circling and just let it be unresolved for now?
+<!-- dana:msg role=dana -->
+You've written about the project stress three times this week.
+
+**Worth noticing:**
+- It always shows up next to rest, never work
+
+*What does it feel like to sit with that?*
+
+<!-- dana:msg role=user -->
+Honestly exhausting. I feel like I keep circling the same thing.
 ```
 
 ---
