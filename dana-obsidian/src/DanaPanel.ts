@@ -3,6 +3,8 @@ import { DanaState, ConversationMessage } from './types';
 import { VaultReader } from './VaultReader';
 import { ConversationStore } from './ConversationStore';
 import { PromptBuilder } from './PromptBuilder';
+import { ContextResolver } from './ContextResolver';
+import { JournalDetector } from './JournalDetector';
 import { OllamaProvider } from './providers/OllamaProvider';
 import { OpenAIProvider } from './providers/OpenAIProvider';
 import type { AIProvider, ChatMessage } from './providers/AIProvider';
@@ -20,12 +22,14 @@ export class DanaPanel extends ItemView {
   private vaultReader: VaultReader;
   private conversationStore: ConversationStore;
   private promptBuilder: PromptBuilder;
+  private contextResolver: ContextResolver;
 
   constructor(leaf: WorkspaceLeaf, private plugin: DanaPlugin) {
     super(leaf);
     this.vaultReader = new VaultReader(this.app);
     this.conversationStore = new ConversationStore(this.app);
     this.promptBuilder = new PromptBuilder();
+    this.contextResolver = new ContextResolver(this.vaultReader, new JournalDetector());
   }
 
   getViewType(): string { return VIEW_TYPE_DANA; }
@@ -109,7 +113,7 @@ export class DanaPanel extends ItemView {
 
     const primaryBtn = el.createEl('button', {
       cls: 'dana-btn-primary',
-      text: 'Reflect on this note',
+      text: 'Reflect on today',
     });
     primaryBtn.addEventListener('click', () => this.reflect());
 
@@ -233,9 +237,13 @@ export class DanaPanel extends ItemView {
 
   private renderErrorNoNotes(el: HTMLElement): void {
     const card = el.createDiv('dana-error-card');
-    card.createDiv({ cls: 'dana-error-msg', text: 'Open a note first, then ask Dana to reflect on it.' });
-    const btn = card.createEl('button', { cls: 'dana-btn-ghost', text: 'Dismiss' });
-    btn.addEventListener('click', () => { this.state = DanaState.IDLE; this.render(); });
+    const folderLabel = this.plugin.settings.journalFolder || 'your vault';
+    card.createDiv({
+      cls: 'dana-error-msg',
+      text: `No journal notes found in ${folderLabel}. Is this the right folder?`,
+    });
+    const btn = card.createEl('button', { cls: 'dana-btn-primary', text: 'Change folder →' });
+    btn.addEventListener('click', () => this.openSettings());
   }
 
   private renderEmptyNotes(el: HTMLElement): void {
@@ -259,15 +267,18 @@ export class DanaPanel extends ItemView {
 
     try {
       const activeFile = this.app.workspace.getActiveFile();
-      if (!activeFile) {
-        this.state = DanaState.ERROR_NO_NOTES;
-        this.render();
-        return;
-      }
+      const frontmatter = activeFile
+        ? this.app.metadataCache.getFileCache(activeFile)?.frontmatter ?? null
+        : null;
 
-      const entry = await this.vaultReader.readActiveFile(activeFile);
-      if (!entry) {
-        this.state = DanaState.EMPTY_NOTES;
+      const { entries } = await this.contextResolver.resolve(
+        activeFile,
+        frontmatter,
+        this.plugin.settings
+      );
+
+      if (entries.length === 0) {
+        this.state = activeFile ? DanaState.EMPTY_NOTES : DanaState.ERROR_NO_NOTES;
         this.render();
         return;
       }
@@ -286,8 +297,8 @@ export class DanaPanel extends ItemView {
       let apiMessages: ChatMessage[];
 
       if (this.messages.length === 0) {
-        // First reflection: build context-rich opening with note content
-        const firstMessage = this.promptBuilder.buildUserMessage([entry], userPrompt);
+        // First reflection: build context-rich opening with entries
+        const firstMessage = this.promptBuilder.buildUserMessage(entries, userPrompt);
         apiMessages = [{ role: 'user', content: firstMessage }];
       } else {
         // Follow-up: send conversation history + new user message
