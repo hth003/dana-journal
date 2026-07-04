@@ -66,3 +66,26 @@ describe('PromptBuilder.buildUserMessage', () => {
     expect(msg).not.toContain('wellness');
   });
 });
+
+describe('PromptBuilder synthesis instructions', () => {
+  it('instructs cross-entry synthesis in the system prompt', () => {
+    const prompt = builder.buildSystemPrompt().toLowerCase();
+    expect(prompt).toContain('repeats');
+    expect(prompt).toContain('at least two different days');
+  });
+
+  it('instructs cross-entry synthesis when multiple entries are provided', () => {
+    const entries = [
+      makeEntry('2026-04-17', 'Felt on edge before the client call.'),
+      makeEntry('2026-04-18', 'On edge again today, same client.'),
+    ];
+    const msg = builder.buildUserMessage(entries).toLowerCase();
+    expect(msg).toContain('at least two different days');
+  });
+
+  it('does not ask for a cross-entry pattern when only one entry is provided', () => {
+    const entries = [makeEntry('2026-04-18', 'Felt calm today after a good walk.')];
+    const msg = builder.buildUserMessage(entries).toLowerCase();
+    expect(msg).not.toContain('at least two different days');
+  });
+});
