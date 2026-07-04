@@ -1,3 +1,10 @@
+# Obsidian plugin build artifacts
+dana-obsidian/node_modules/
+dana-obsidian/main.js
+
+# Obsidian plugin local settings (holds the stored OpenAI key)
+dana-obsidian/data.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

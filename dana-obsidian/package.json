@@ -1,0 +1,29 @@
+{
+  "name": "dana-obsidian-plugin",
+  "version": "1.0.0",
+  "description": "Dana journaling companion for Obsidian",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "test": "jest --testPathPattern=tests/"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^obsidian$": "<rootDir>/tests/__mocks__/obsidian.ts"
+    }
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^22.0.0",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "0.21.5",
+    "jest": "^29.7.0",
+    "obsidian": "latest",
+    "ts-jest": "^29.2.0",
+    "tslib": "2.6.0",
+    "typescript": "5.5.4"
+  }
+}
