@@ -1,91 +1,135 @@
-import { PromptBuilder } from '../src/PromptBuilder';
-import { JournalEntry } from '../src/types';
+import { PromptBuilder, INSIGHTS_LABEL } from '../src/PromptBuilder';
+import { JournalEntry, ConversationMessage } from '../src/types';
 
 const builder = new PromptBuilder();
 
-function makeEntry(date: string, content: string): JournalEntry {
-  return { date, content, path: `Daily Notes/${date}.md` };
+function entry(date: string, content: string, path = `Daily Notes/${date}.md`): JournalEntry {
+  return { date, content, path };
 }
 
+const BANNED = ['journey', 'mindfulness', 'wellness', 'robust', 'comprehensive', 'holistic'];
+
 describe('PromptBuilder.buildSystemPrompt', () => {
-  it('returns a non-empty string', () => {
-    const prompt = builder.buildSystemPrompt();
-    expect(prompt.length).toBeGreaterThan(0);
+  it('entry mode scopes Dana to the single provided note', () => {
+    const prompt = builder.buildSystemPrompt('entry', [entry('2026-07-04', 'today I felt stuck')]);
+
+    expect(prompt).toContain('exactly ONE journal entry');
+    expect(prompt).toContain('today I felt stuck');
+    expect(prompt).not.toContain('at least two different days');
   });
 
-  it('does not promote "AI-powered" language in user-facing framing', () => {
-    const prompt = builder.buildSystemPrompt().toLowerCase();
-    // The instructions may mention banned words as examples to avoid,
-    // but should not contain marketing framing Dana would output.
-    expect(prompt).not.toContain('ai-powered journaling');
-    expect(prompt).not.toContain('leverage ai');
-    expect(prompt).not.toContain('unlock the power');
+  it('week mode with multiple entries asks for a cross-day thread', () => {
+    const prompt = builder.buildSystemPrompt('week', [
+      entry('2026-07-03', 'deadline stress again'),
+      entry('2026-07-04', 'the deadline is close'),
+    ]);
+
+    expect(prompt).toContain('at least two different days');
+    expect(prompt).toContain('deadline stress again');
+    expect(prompt).toContain('the deadline is close');
+  });
+
+  it('week mode with one entry falls back to single-entry framing (no invented patterns)', () => {
+    const prompt = builder.buildSystemPrompt('week', [entry('2026-07-04', 'only entry')]);
+
+    expect(prompt).toContain("don't invent a pattern");
+    expect(prompt).not.toContain('at least two different days');
+  });
+
+  it('embeds entries oldest-to-newest with their dates', () => {
+    const prompt = builder.buildSystemPrompt('week', [
+      entry('2026-07-01', 'first'),
+      entry('2026-07-04', 'last'),
+    ]);
+
+    expect(prompt.indexOf('[2026-07-01]')).toBeLessThan(prompt.indexOf('[2026-07-04]'));
   });
 
   it('establishes Dana as a companion not a therapist', () => {
-    const prompt = builder.buildSystemPrompt().toLowerCase();
+    const prompt = builder.buildSystemPrompt('entry', [entry('2026-07-04', 'x')]).toLowerCase();
     expect(prompt).toContain('companion');
     expect(prompt).toContain('not a therapist');
   });
-});
 
-describe('PromptBuilder.buildUserMessage', () => {
-  it('handles empty entries gracefully', () => {
-    const msg = builder.buildUserMessage([]);
-    expect(msg.length).toBeGreaterThan(0);
-  });
-
-  it('includes entry dates in context', () => {
-    const entries = [makeEntry('2026-04-18', 'Felt stressed about the project deadline.')];
-    const msg = builder.buildUserMessage(entries);
-    expect(msg).toContain('2026-04-18');
-    expect(msg).toContain('stressed');
-  });
-
-  it('includes userInput when provided', () => {
-    const entries = [makeEntry('2026-04-18', 'Felt peaceful walking in the park.')];
-    const msg = builder.buildUserMessage(entries, "I need to process something.");
-    expect(msg).toContain('I need to process something');
-  });
-
-  it('includes all entries separated by dividers', () => {
-    const entries = [
-      makeEntry('2026-04-18', 'Today was tough. Work was overwhelming.'),
-      makeEntry('2026-04-17', 'Yesterday I felt tired but managed.'),
-    ];
-    const msg = builder.buildUserMessage(entries);
-    expect(msg).toContain('2026-04-18');
-    expect(msg).toContain('2026-04-17');
-    expect(msg).toContain('---');
-  });
-
-  it('does not mention "AI" or "wellness" in user message', () => {
-    const entries = [makeEntry('2026-04-18', 'Had a productive day.')];
-    const msg = builder.buildUserMessage(entries).toLowerCase();
-    expect(msg).not.toContain('ai-powered');
-    expect(msg).not.toContain('wellness');
+  it('never contains banned words outside the explicit prohibition line', () => {
+    for (const mode of ['entry', 'week'] as const) {
+      const prompt = builder
+        .buildSystemPrompt(mode, [entry('2026-07-04', 'plain content')])
+        .toLowerCase()
+        .split('\n')
+        .filter(line => !line.includes('do not use the words'))
+        .join('\n');
+      for (const word of BANNED) {
+        expect(prompt).not.toContain(word);
+      }
+    }
   });
 });
 
-describe('PromptBuilder synthesis instructions', () => {
-  it('instructs cross-entry synthesis in the system prompt', () => {
-    const prompt = builder.buildSystemPrompt().toLowerCase();
-    expect(prompt).toContain('repeats');
-    expect(prompt).toContain('at least two different days');
+describe('PromptBuilder.buildFirstTurnInstruction', () => {
+  it('requests the byte-exact ritual label in both modes', () => {
+    expect(builder.buildFirstTurnInstruction('entry')).toContain(INSIGHTS_LABEL);
+    expect(builder.buildFirstTurnInstruction('week')).toContain(INSIGHTS_LABEL);
+    expect(INSIGHTS_LABEL).toBe('**Worth noticing:**');
   });
 
-  it('instructs cross-entry synthesis when multiple entries are provided', () => {
-    const entries = [
-      makeEntry('2026-04-17', 'Felt on edge before the client call.'),
-      makeEntry('2026-04-18', 'On edge again today, same client.'),
-    ];
-    const msg = builder.buildUserMessage(entries).toLowerCase();
-    expect(msg).toContain('at least two different days');
+  it('requests exactly one closing question in italics', () => {
+    const instruction = builder.buildFirstTurnInstruction('entry');
+    expect(instruction).toContain('exactly one open question');
+    expect(instruction).toContain('italics');
+  });
+});
+
+describe('PromptBuilder.buildTurnMessages', () => {
+  const history: ConversationMessage[] = [
+    { role: 'user', content: 'first words', timestamp: 1 },
+    { role: 'dana', content: 'a reflection', timestamp: 2 },
+  ];
+
+  it('first turn without input sends only the structured instruction', () => {
+    const messages = builder.buildTurnMessages('entry', []);
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0].role).toBe('user');
+    expect(messages[0].content).toContain(INSIGHTS_LABEL);
   });
 
-  it('does not ask for a cross-entry pattern when only one entry is provided', () => {
-    const entries = [makeEntry('2026-04-18', 'Felt calm today after a good walk.')];
-    const msg = builder.buildUserMessage(entries).toLowerCase();
-    expect(msg).not.toContain('at least two different days');
+  it('first turn with user input includes their words alongside the instruction', () => {
+    const messages = builder.buildTurnMessages('week', [], 'I feel scattered');
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0].content).toContain(INSIGHTS_LABEL);
+    expect(messages[0].content).toContain('I feel scattered');
+  });
+
+  it('later turns send clean history + the new input, WITHOUT the structure instruction', () => {
+    const messages = builder.buildTurnMessages('entry', history, 'tell me more');
+
+    expect(messages).toEqual([
+      { role: 'user', content: 'first words' },
+      { role: 'assistant', content: 'a reflection' },
+      { role: 'user', content: 'tell me more' },
+    ]);
+    expect(JSON.stringify(messages)).not.toContain('Worth noticing');
+  });
+
+  it('later turns without input (retry) end on the prior user message', () => {
+    const messages = builder.buildTurnMessages('entry', [history[0]]);
+
+    expect(messages).toEqual([{ role: 'user', content: 'first words' }]);
+  });
+});
+
+describe('journal context on every turn (regression: Dana forgot what she read)', () => {
+  it('system prompt carries entry content regardless of turn number', () => {
+    // Turn 2+: history is non-empty, but context lives in the system prompt,
+    // which DanaPanel rebuilds every turn from re-read entries.
+    const prompt = builder.buildSystemPrompt('entry', [entry('2026-07-04', 'the apartment search drags on')]);
+    const turn2 = builder.buildTurnMessages('entry', [
+      { role: 'dana', content: 'reflection', timestamp: 1 },
+    ], 'why do I avoid it?');
+
+    expect(prompt).toContain('the apartment search drags on');
+    expect(turn2[turn2.length - 1].content).toBe('why do I avoid it?');
   });
 });

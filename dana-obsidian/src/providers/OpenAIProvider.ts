@@ -1,4 +1,4 @@
-import { AIProvider, ChatMessage } from './AIProvider';
+import { AIProvider, ChatMessage, GenerationEnd } from './AIProvider';
 
 export class OpenAIProvider implements AIProvider {
   name = 'OpenAI';
@@ -9,7 +9,7 @@ export class OpenAIProvider implements AIProvider {
     return this.apiKey.trim().length > 0;
   }
 
-  async *generate(systemPrompt: string, messages: ChatMessage[], signal: AbortSignal): AsyncGenerator<string> {
+  async *generate(systemPrompt: string, messages: ChatMessage[], signal: AbortSignal): AsyncGenerator<string, GenerationEnd> {
     const resp = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -23,7 +23,7 @@ export class OpenAIProvider implements AIProvider {
           ...messages,
         ],
         stream: true,
-        max_tokens: 600,
+        max_tokens: 1024,
       }),
       signal,
     });
@@ -34,24 +34,34 @@ export class OpenAIProvider implements AIProvider {
 
     const reader = resp.body!.getReader();
     const decoder = new TextDecoder();
+    // SSE lines can straddle network reads — carry the unterminated tail over.
+    let buffer = '';
+    let truncated = false;
 
     try {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const text = decoder.decode(value, { stream: true });
-        for (const line of text.split('\n')) {
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
           if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
           try {
             const data = JSON.parse(line.slice(6));
             const chunk = data.choices?.[0]?.delta?.content;
             if (chunk) yield chunk;
+            if (data.choices?.[0]?.finish_reason === 'length') {
+              truncated = true;
+            }
           } catch {
-            // skip malformed SSE line
+            // genuinely malformed SSE line — skip
           }
         }
       }
+      return { truncated };
     } finally {
       reader.releaseLock();
     }

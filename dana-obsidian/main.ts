@@ -1,6 +1,6 @@
-import { Plugin, WorkspaceLeaf } from 'obsidian';
+import { Notice, Plugin, WorkspaceLeaf } from 'obsidian';
 import { DanaPanel, VIEW_TYPE_DANA } from './src/DanaPanel';
-import { DanaSettings, DEFAULT_SETTINGS } from './src/types';
+import { DanaSettings, DEFAULT_SETTINGS, ReflectionMode } from './src/types';
 import { DanaSettingsTab } from './src/SettingsTab';
 import { JournalDetector } from './src/JournalDetector';
 import { SecretStore, SafeStorageLike } from './src/SecretStore';
@@ -23,17 +23,24 @@ export default class DanaPlugin extends Plugin {
     // Ribbon icon — leaf = nature, warm, not robot
     this.ribbonIconEl = this.addRibbonIcon('leaf', 'Dana', () => this.activateView());
 
-    // Command palette
+    // Command palette — same gating as the panel buttons: the entry command
+    // must never ground a reflection on a non-journal note.
     this.addCommand({
-      id: 'dana-reflect-today',
-      name: 'Reflect on today',
-      callback: () => this.activateAndReflect(),
+      id: 'dana-reflect-entry',
+      name: 'Reflect on this entry',
+      callback: () => {
+        if (!this.activeNoteIsJournal()) {
+          new Notice('Open a journal note first');
+          return;
+        }
+        this.activateAndReflect('entry');
+      },
     });
 
     this.addCommand({
-      id: 'dana-how-have-i-been',
-      name: 'How have I been lately?',
-      callback: () => this.activateAndReflect('How have I been lately?'),
+      id: 'dana-reflect-week',
+      name: 'Reflect on my week',
+      callback: () => this.activateAndReflect('week'),
     });
 
     this.addCommand({
@@ -59,17 +66,20 @@ export default class DanaPlugin extends Plugin {
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_DANA);
   }
 
-  updateRibbonState(): void {
+  activeNoteIsJournal(): boolean {
     const activeFile = this.app.workspace.getActiveFile();
     const frontmatter = activeFile
       ? this.app.metadataCache.getFileCache(activeFile)?.frontmatter ?? null
       : null;
-    const isJournalNote = this.journalDetector.isJournalNote(
+    return this.journalDetector.isJournalNote(
       activeFile,
       this.settings.journalFolder,
       frontmatter
     );
-    this.ribbonIconEl.toggleClass('dana-ribbon-passive', !isJournalNote);
+  }
+
+  updateRibbonState(): void {
+    this.ribbonIconEl.toggleClass('dana-ribbon-passive', !this.activeNoteIsJournal());
   }
 
   async activateView(): Promise<void> {
@@ -86,12 +96,12 @@ export default class DanaPlugin extends Plugin {
     workspace.revealLeaf(leaf);
   }
 
-  async activateAndReflect(prompt?: string): Promise<void> {
+  async activateAndReflect(mode: ReflectionMode): Promise<void> {
     await this.activateView();
     const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_DANA);
     if (leaves.length > 0) {
       const panel = leaves[0].view as DanaPanel;
-      await panel.reflect(prompt);
+      await panel.startReflection(mode);
     }
   }
 

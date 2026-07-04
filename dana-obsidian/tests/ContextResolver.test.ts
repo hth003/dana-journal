@@ -11,11 +11,69 @@ function makeEntry(path: string, date: string, content = 'placeholder content'):
   return { date, content, path };
 }
 
-describe('ContextResolver.resolve', () => {
-  it('returns recent entries oldest-to-newest and does not read the active file when it is not a journal note', async () => {
+const settings = { journalFolder: 'Daily Notes', maxContextEntries: 7 };
+
+describe('ContextResolver.resolve — entry mode', () => {
+  it('returns ONLY the active journal note, never touching recent entries', async () => {
+    const activeEntry = makeEntry('Daily Notes/2026-07-04.md', '2026-07-04', 'today content');
+    const vaultReader = {
+      readRecentEntries: jest.fn(),
+      readActiveFile: jest.fn().mockResolvedValue(activeEntry),
+    };
+    const journalDetector = { isJournalNote: jest.fn().mockReturnValue(true) };
+    const resolver = new ContextResolver(vaultReader, journalDetector);
+
+    const result = await resolver.resolve('entry', makeFile('Daily Notes/2026-07-04.md'), null, settings);
+
+    expect(result.entries).toEqual([activeEntry]);
+    expect(vaultReader.readRecentEntries).not.toHaveBeenCalled();
+  });
+
+  it('returns empty when the active note is not a journal note', async () => {
+    const vaultReader = {
+      readRecentEntries: jest.fn(),
+      readActiveFile: jest.fn(),
+    };
+    const journalDetector = { isJournalNote: jest.fn().mockReturnValue(false) };
+    const resolver = new ContextResolver(vaultReader, journalDetector);
+
+    const result = await resolver.resolve('entry', makeFile('Projects/work.md'), null, settings);
+
+    expect(result.entries).toEqual([]);
+    expect(result.activeIsJournalNote).toBe(false);
+    expect(vaultReader.readActiveFile).not.toHaveBeenCalled();
+  });
+
+  it('returns empty when no note is open', async () => {
+    const vaultReader = { readRecentEntries: jest.fn(), readActiveFile: jest.fn() };
+    const journalDetector = { isJournalNote: jest.fn().mockReturnValue(false) };
+    const resolver = new ContextResolver(vaultReader, journalDetector);
+
+    const result = await resolver.resolve('entry', null, null, settings);
+
+    expect(result.entries).toEqual([]);
+  });
+
+  it('returns empty when the active note is a journal note but too short to read', async () => {
+    const vaultReader = {
+      readRecentEntries: jest.fn(),
+      readActiveFile: jest.fn().mockResolvedValue(null),
+    };
+    const journalDetector = { isJournalNote: jest.fn().mockReturnValue(true) };
+    const resolver = new ContextResolver(vaultReader, journalDetector);
+
+    const result = await resolver.resolve('entry', makeFile('Daily Notes/2026-07-04.md'), null, settings);
+
+    expect(result.entries).toEqual([]);
+    expect(result.activeIsJournalNote).toBe(true);
+  });
+});
+
+describe('ContextResolver.resolve — week mode', () => {
+  it('returns recent entries oldest-to-newest', async () => {
     const recent = [
-      makeEntry('Daily Notes/2026-04-18.md', '2026-04-18'),
-      makeEntry('Daily Notes/2026-04-17.md', '2026-04-17'),
+      makeEntry('Daily Notes/2026-07-04.md', '2026-07-04'),
+      makeEntry('Daily Notes/2026-07-03.md', '2026-07-03'),
     ];
     const vaultReader = {
       readRecentEntries: jest.fn().mockResolvedValue(recent),
@@ -24,19 +82,15 @@ describe('ContextResolver.resolve', () => {
     const journalDetector = { isJournalNote: jest.fn().mockReturnValue(false) };
     const resolver = new ContextResolver(vaultReader, journalDetector);
 
-    const result = await resolver.resolve(makeFile('Projects/work.md'), null, {
-      journalFolder: 'Daily Notes',
-      maxContextEntries: 7,
-    });
+    const result = await resolver.resolve('week', makeFile('Projects/work.md'), null, settings);
 
-    expect(result.activeIsJournalNote).toBe(false);
-    expect(result.entries.map(e => e.date)).toEqual(['2026-04-17', '2026-04-18']);
+    expect(result.entries.map(e => e.date)).toEqual(['2026-07-03', '2026-07-04']);
     expect(vaultReader.readActiveFile).not.toHaveBeenCalled();
   });
 
-  it('appends the active file as the newest entry when it is a journal note not already in the recent scan', async () => {
-    const recent = [makeEntry('Daily Notes/2026-04-17.md', '2026-04-17')];
-    const activeEntry = makeEntry('Daily Notes/2026-04-18.md', '2026-04-18', 'today content');
+  it('appends the active journal note when not already in the recent scan', async () => {
+    const recent = [makeEntry('Daily Notes/2026-07-03.md', '2026-07-03')];
+    const activeEntry = makeEntry('Notes/2026-07-04.md', '2026-07-04', 'today content');
     const vaultReader = {
       readRecentEntries: jest.fn().mockResolvedValue(recent),
       readActiveFile: jest.fn().mockResolvedValue(activeEntry),
@@ -44,21 +98,16 @@ describe('ContextResolver.resolve', () => {
     const journalDetector = { isJournalNote: jest.fn().mockReturnValue(true) };
     const resolver = new ContextResolver(vaultReader, journalDetector);
 
-    const result = await resolver.resolve(makeFile('Daily Notes/2026-04-18.md'), null, {
-      journalFolder: 'Daily Notes',
-      maxContextEntries: 7,
-    });
+    const result = await resolver.resolve('week', makeFile('Notes/2026-07-04.md'), null, settings);
 
-    expect(result.activeIsJournalNote).toBe(true);
     expect(result.entries).toEqual([recent[0], activeEntry]);
-    expect(vaultReader.readActiveFile).toHaveBeenCalledTimes(1);
   });
 
-  it('does not duplicate the active file when it is already included in the recent scan', async () => {
-    const activePath = 'Daily Notes/2026-04-18.md';
+  it('does not duplicate the active note when it is already in the recent scan', async () => {
+    const activePath = 'Daily Notes/2026-07-04.md';
     const recent = [
-      makeEntry(activePath, '2026-04-18'),
-      makeEntry('Daily Notes/2026-04-17.md', '2026-04-17'),
+      makeEntry(activePath, '2026-07-04'),
+      makeEntry('Daily Notes/2026-07-03.md', '2026-07-03'),
     ];
     const vaultReader = {
       readRecentEntries: jest.fn().mockResolvedValue(recent),
@@ -67,35 +116,14 @@ describe('ContextResolver.resolve', () => {
     const journalDetector = { isJournalNote: jest.fn().mockReturnValue(true) };
     const resolver = new ContextResolver(vaultReader, journalDetector);
 
-    const result = await resolver.resolve(makeFile(activePath), null, {
-      journalFolder: 'Daily Notes',
-      maxContextEntries: 7,
-    });
+    const result = await resolver.resolve('week', makeFile(activePath), null, settings);
 
     expect(result.entries).toHaveLength(2);
     expect(vaultReader.readActiveFile).not.toHaveBeenCalled();
   });
 
-  it('includes a journal-note active file even when it is outside the configured folder', async () => {
-    const activeEntry = makeEntry('Notes/2026-04-18.md', '2026-04-18', 'dated note content');
-    const vaultReader = {
-      readRecentEntries: jest.fn().mockResolvedValue([]),
-      readActiveFile: jest.fn().mockResolvedValue(activeEntry),
-    };
-    const journalDetector = { isJournalNote: jest.fn().mockReturnValue(true) };
-    const resolver = new ContextResolver(vaultReader, journalDetector);
-
-    const result = await resolver.resolve(makeFile('Notes/2026-04-18.md'), null, {
-      journalFolder: 'Daily Notes',
-      maxContextEntries: 7,
-    });
-
-    expect(result.entries).toEqual([activeEntry]);
-    expect(result.activeIsJournalNote).toBe(true);
-  });
-
-  it('returns the recent entries alone when there is no active file', async () => {
-    const recent = [makeEntry('Daily Notes/2026-04-18.md', '2026-04-18')];
+  it('respects maxContextEntries = 1 boundary', async () => {
+    const recent = [makeEntry('Daily Notes/2026-07-04.md', '2026-07-04')];
     const vaultReader = {
       readRecentEntries: jest.fn().mockResolvedValue(recent),
       readActiveFile: jest.fn(),
@@ -103,13 +131,13 @@ describe('ContextResolver.resolve', () => {
     const journalDetector = { isJournalNote: jest.fn().mockReturnValue(false) };
     const resolver = new ContextResolver(vaultReader, journalDetector);
 
-    const result = await resolver.resolve(null, null, {
+    const result = await resolver.resolve('week', null, null, {
       journalFolder: 'Daily Notes',
-      maxContextEntries: 7,
+      maxContextEntries: 1,
     });
 
-    expect(result.entries).toEqual(recent);
-    expect(journalDetector.isJournalNote).toHaveBeenCalledWith(null, 'Daily Notes', null);
+    expect(vaultReader.readRecentEntries).toHaveBeenCalledWith('Daily Notes', 1);
+    expect(result.entries).toHaveLength(1);
   });
 
   it('returns an empty result when there are no entries anywhere', async () => {
@@ -120,10 +148,7 @@ describe('ContextResolver.resolve', () => {
     const journalDetector = { isJournalNote: jest.fn().mockReturnValue(false) };
     const resolver = new ContextResolver(vaultReader, journalDetector);
 
-    const result = await resolver.resolve(null, null, {
-      journalFolder: 'Daily Notes',
-      maxContextEntries: 7,
-    });
+    const result = await resolver.resolve('week', null, null, settings);
 
     expect(result.entries).toEqual([]);
   });

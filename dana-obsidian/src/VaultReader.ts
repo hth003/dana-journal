@@ -19,6 +19,13 @@ export class VaultReader {
     return this.readFile(file);
   }
 
+  /** Re-read a pinned context file by path. Null if it no longer exists. */
+  async readPath(path: string): Promise<JournalEntry | null> {
+    const file = this.app.vault.getAbstractFileByPath(path);
+    if (!(file instanceof TFile)) return null;
+    return this.readFile(file);
+  }
+
   async readRecentEntries(folderPath: string, maxEntries: number): Promise<JournalEntry[]> {
     const allFiles = this.app.vault.getMarkdownFiles();
 
@@ -26,8 +33,10 @@ export class VaultReader {
       ? allFiles.filter(f => f.path.startsWith(folderPath.replace(/\/$/, '') + '/') || f.path === folderPath)
       : allFiles;
 
-    // Sort most-recent first by modification time
-    const sorted = filtered.slice().sort((a, b) => b.stat.mtime - a.stat.mtime);
+    // "Recent" means recent DAYS, not recently touched: sort by the date in the
+    // filename (YYYY-MM-DD) so editing an old note doesn't promote it. Files
+    // without a parseable date fall back to their mtime on the same ms scale.
+    const sorted = filtered.slice().sort((a, b) => this.entryTime(b) - this.entryTime(a));
 
     const entries: JournalEntry[] = [];
     for (const file of sorted) {
@@ -37,6 +46,15 @@ export class VaultReader {
     }
 
     return entries;
+  }
+
+  private entryTime(file: TFile): number {
+    const m = file.basename.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (m) {
+      const t = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime();
+      if (!Number.isNaN(t)) return t;
+    }
+    return file.stat.mtime;
   }
 
   private async readFile(file: TFile): Promise<JournalEntry | null> {
