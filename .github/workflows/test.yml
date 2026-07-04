@@ -11,6 +11,10 @@ env:
   PYTHON_VERSION: "3.11"
   UV_VERSION: "0.5.0"
 
+defaults:
+  run:
+    working-directory: dana-desktop
+
 jobs:
   test:
     name: Run Tests
@@ -19,68 +23,60 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.11", "3.12"]
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
           version: ${{ env.UV_VERSION }}
-      
+
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
-      
+
       - name: Install dependencies
         run: uv sync
-      
+
       - name: Run formatter check
         run: uv run black --check .
-      
+
       - name: Run linter
         run: uv run ruff check .
-      
+
       - name: Run type checker (if available)
         run: uv run mypy . || echo "mypy not configured, skipping type check"
         continue-on-error: true
-      
+
       - name: Run tests
         run: uv run pytest --verbose --tb=short
-      
-      - name: Test import (smoke test)
-        run: |
-          uv run python -c "
-          try:
-              from dana_journal import main
-              print('✅ Main module imports successfully')
-          except ImportError as e:
-              print(f'❌ Import failed: {e}')
-              exit(1)
-          "
+
+      - name: Smoke test import
+        run: uv run python -c "import sys; sys.path.insert(0, 'src'); import main; print('Main module imports successfully')"
 
   lint:
     name: Code Quality
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
           version: ${{ env.UV_VERSION }}
-      
+
       - name: Set up Python
         run: uv python install ${{ env.PYTHON_VERSION }}
-      
+
       - name: Install dependencies
         run: uv sync
-      
+
       - name: Check code formatting
         run: uv run black --check --diff .
-      
+
       - name: Run linter
         run: uv run ruff check --output-format=github .
-      
+
       - name: Check dependencies
         run: uv tree

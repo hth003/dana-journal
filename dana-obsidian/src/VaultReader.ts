@@ -15,6 +15,10 @@ const INJECTION_PATTERNS = [
 export class VaultReader {
   constructor(private app: App) {}
 
+  async readActiveFile(file: TFile): Promise<JournalEntry | null> {
+    return this.readFile(file);
+  }
+
   async readRecentEntries(folderPath: string, maxEntries: number): Promise<JournalEntry[]> {
     const allFiles = this.app.vault.getMarkdownFiles();
 

@@ -1,6 +1,6 @@
 # Obsidian plugin build artifacts
-plugin/node_modules/
-plugin/main.js
+dana-obsidian/node_modules/
+dana-obsidian/main.js
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

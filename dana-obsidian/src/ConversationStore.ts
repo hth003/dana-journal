@@ -39,13 +39,25 @@ export class ConversationStore {
       return;
     }
 
-    // Ensure .dana/ directory exists
+    // Ensure .dana/ directory exists — ignore "already exists" errors
     const dir = path.substring(0, path.lastIndexOf('/'));
-    if (dir && !this.app.vault.getAbstractFileByPath(dir)) {
-      await this.app.vault.createFolder(dir);
+    if (dir) {
+      try {
+        await this.app.vault.createFolder(dir);
+      } catch {
+        // folder already exists, that's fine
+      }
     }
 
-    await this.app.vault.create(path, content);
+    // File may have been created between our check and now
+    try {
+      await this.app.vault.create(path, content);
+    } catch {
+      const created = this.app.vault.getAbstractFileByPath(path);
+      if (created instanceof TFile) {
+        await this.app.vault.modify(created, content);
+      }
+    }
   }
 
   private parseMarkdown(content: string): ConversationMessage[] {

@@ -1,4 +1,4 @@
-import { AIProvider } from './AIProvider';
+import { AIProvider, ChatMessage } from './AIProvider';
 
 export class OllamaProvider implements AIProvider {
   name = 'Ollama';
@@ -16,7 +16,7 @@ export class OllamaProvider implements AIProvider {
     }
   }
 
-  async *generate(systemPrompt: string, userMessage: string, signal: AbortSignal): AsyncGenerator<string> {
+  async *generate(systemPrompt: string, messages: ChatMessage[], signal: AbortSignal): AsyncGenerator<string> {
     const resp = await fetch(`${this.host}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -24,7 +24,7 @@ export class OllamaProvider implements AIProvider {
         model: this.model,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage },
+          ...messages,
         ],
         stream: true,
       }),

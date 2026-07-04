@@ -5,7 +5,7 @@ import { ConversationStore } from './ConversationStore';
 import { PromptBuilder } from './PromptBuilder';
 import { OllamaProvider } from './providers/OllamaProvider';
 import { OpenAIProvider } from './providers/OpenAIProvider';
-import type { AIProvider } from './providers/AIProvider';
+import type { AIProvider, ChatMessage } from './providers/AIProvider';
 import type DanaPlugin from '../main';
 
 export const VIEW_TYPE_DANA = 'dana-journal-view';
@@ -14,6 +14,7 @@ export class DanaPanel extends ItemView {
   private state: DanaState = DanaState.IDLE;
   private messages: ConversationMessage[] = [];
   private streamContent = '';
+  private lastError = '';
   private abortController?: AbortController;
 
   private vaultReader: VaultReader;
@@ -108,7 +109,7 @@ export class DanaPanel extends ItemView {
 
     const primaryBtn = el.createEl('button', {
       cls: 'dana-btn-primary',
-      text: 'Reflect on today',
+      text: 'Reflect on this note',
     });
     primaryBtn.addEventListener('click', () => this.reflect());
 
@@ -123,7 +124,7 @@ export class DanaPanel extends ItemView {
   }
 
   private renderLoading(el: HTMLElement): void {
-    el.createDiv({ cls: 'dana-loading-msg', text: 'Dana is reading your recent notes...' });
+    el.createDiv({ cls: 'dana-loading-msg', text: 'Dana is reading your note...' });
     el.createDiv({ cls: 'dana-dots', text: '• • •' });
 
     const cancelBtn = el.createEl('button', { cls: 'dana-btn-secondary', text: 'Cancel' });
@@ -219,7 +220,10 @@ export class DanaPanel extends ItemView {
 
   private renderErrorTimeout(el: HTMLElement): void {
     const card = el.createDiv('dana-error-card');
-    card.createDiv({ cls: 'dana-error-msg', text: 'Taking longer than usual. Still thinking...' });
+    card.createDiv({ cls: 'dana-error-msg', text: 'Something went wrong.' });
+    if (this.lastError) {
+      card.createDiv({ cls: 'dana-error-detail', text: this.lastError });
+    }
     const actions = card.createDiv('dana-actions');
     const retry = actions.createEl('button', { cls: 'dana-btn-primary', text: 'Retry' });
     retry.addEventListener('click', () => this.reflect());
@@ -228,11 +232,10 @@ export class DanaPanel extends ItemView {
   }
 
   private renderErrorNoNotes(el: HTMLElement): void {
-    const folder = this.plugin.settings.journalFolder || 'vault root';
     const card = el.createDiv('dana-error-card');
-    card.createDiv({ cls: 'dana-error-msg', text: `No journal notes found in "${folder}". Is this the right folder?` });
-    const btn = card.createEl('button', { cls: 'dana-btn-secondary', text: 'Change folder →' });
-    btn.addEventListener('click', () => this.openSettings());
+    card.createDiv({ cls: 'dana-error-msg', text: 'Open a note first, then ask Dana to reflect on it.' });
+    const btn = card.createEl('button', { cls: 'dana-btn-ghost', text: 'Dismiss' });
+    btn.addEventListener('click', () => { this.state = DanaState.IDLE; this.render(); });
   }
 
   private renderEmptyNotes(el: HTMLElement): void {
@@ -245,16 +248,29 @@ export class DanaPanel extends ItemView {
   // ── Core logic ───────────────────────────────────────────────────────────
 
   async reflect(userPrompt?: string): Promise<void> {
+    // 30-second hard timeout on the whole generation
     this.abortController = new AbortController();
+    const timeoutId = setTimeout(() => this.abortController?.abort('timeout'), 30_000);
+
     this.streamContent = '';
+    this.lastError = '';
     this.state = DanaState.LOADING;
     this.render();
 
     try {
-      const entries = await this.vaultReader.readRecentEntries(
-        this.plugin.settings.journalFolder,
-        this.plugin.settings.maxContextEntries
-      );
+      const activeFile = this.app.workspace.getActiveFile();
+      if (!activeFile) {
+        this.state = DanaState.ERROR_NO_NOTES;
+        this.render();
+        return;
+      }
+
+      const entry = await this.vaultReader.readActiveFile(activeFile);
+      if (!entry) {
+        this.state = DanaState.EMPTY_NOTES;
+        this.render();
+        return;
+      }
 
       const provider = this.resolveProvider();
       if (!provider || !(await provider.isAvailable())) {
@@ -263,12 +279,31 @@ export class DanaPanel extends ItemView {
         return;
       }
 
+      // Build messages array for the API:
+      // - First turn: one user message with note context
+      // - Follow-up turns: full conversation history so the AI has context
+      const systemPrompt = this.promptBuilder.buildSystemPrompt();
+      let apiMessages: ChatMessage[];
+
+      if (this.messages.length === 0) {
+        // First reflection: build context-rich opening with note content
+        const firstMessage = this.promptBuilder.buildUserMessage([entry], userPrompt);
+        apiMessages = [{ role: 'user', content: firstMessage }];
+      } else {
+        // Follow-up: send conversation history + new user message
+        // Keep the note context in the first message so Dana remembers what she read
+        apiMessages = this.messages.map(m => ({
+          role: (m.role === 'dana' ? 'assistant' : 'user') as 'user' | 'assistant',
+          content: m.content,
+        }));
+        if (userPrompt) {
+          apiMessages.push({ role: 'user', content: userPrompt });
+        }
+      }
+
       if (userPrompt) {
         this.messages.push({ role: 'user', content: userPrompt, timestamp: Date.now() });
       }
-
-      const systemPrompt = this.promptBuilder.buildSystemPrompt();
-      const userMessage = this.promptBuilder.buildUserMessage(entries, userPrompt);
 
       this.state = DanaState.STREAMING;
       this.render();
@@ -276,7 +311,7 @@ export class DanaPanel extends ItemView {
       let response = '';
       const signal = this.abortController.signal;
 
-      for await (const chunk of provider.generate(systemPrompt, userMessage, signal)) {
+      for await (const chunk of provider.generate(systemPrompt, apiMessages, signal)) {
         if (signal.aborted) break;
         response += chunk;
         this.streamContent = response;
@@ -292,9 +327,13 @@ export class DanaPanel extends ItemView {
       this.state = this.messages.length > 0 ? DanaState.DONE : DanaState.IDLE;
       this.render();
     } catch (err: unknown) {
-      const isAbort = err instanceof Error && (err.name === 'AbortError' || err.message.includes('abort'));
-      if (isAbort) {
-        if (this.messages.length > 0 && this.streamContent.trim()) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const isAbort = err instanceof Error && (err.name === 'AbortError' || errMsg.includes('abort'));
+      const isTimeout = isAbort && errMsg === 'timeout';
+
+      if (isAbort && !isTimeout) {
+        // User clicked Stop — keep partial response if we have one
+        if (this.streamContent.trim()) {
           this.messages.push({ role: 'dana', content: this.streamContent.trim(), timestamp: Date.now() });
           await this.conversationStore.save(this.plugin.settings.journalFolder, this.messages);
           this.state = DanaState.DONE;
@@ -302,10 +341,15 @@ export class DanaPanel extends ItemView {
           this.state = DanaState.IDLE;
         }
       } else {
-        console.error('Dana reflection error:', err);
+        console.error('Dana error:', err);
+        this.lastError = isTimeout
+          ? 'Timed out after 30s. Is Ollama running and the model loaded?'
+          : errMsg;
         this.state = DanaState.ERROR_TIMEOUT;
       }
       this.render();
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 

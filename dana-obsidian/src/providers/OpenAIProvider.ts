@@ -1,4 +1,4 @@
-import { AIProvider } from './AIProvider';
+import { AIProvider, ChatMessage } from './AIProvider';
 
 export class OpenAIProvider implements AIProvider {
   name = 'OpenAI';
@@ -9,7 +9,7 @@ export class OpenAIProvider implements AIProvider {
     return this.apiKey.trim().length > 0;
   }
 
-  async *generate(systemPrompt: string, userMessage: string, signal: AbortSignal): AsyncGenerator<string> {
+  async *generate(systemPrompt: string, messages: ChatMessage[], signal: AbortSignal): AsyncGenerator<string> {
     const resp = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -20,7 +20,7 @@ export class OpenAIProvider implements AIProvider {
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage },
+          ...messages,
         ],
         stream: true,
         max_tokens: 600,
