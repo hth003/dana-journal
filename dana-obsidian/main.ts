@@ -3,13 +3,16 @@ import { DanaPanel, VIEW_TYPE_DANA } from './src/DanaPanel';
 import { DanaSettings, DEFAULT_SETTINGS } from './src/types';
 import { DanaSettingsTab } from './src/SettingsTab';
 import { JournalDetector } from './src/JournalDetector';
+import { SecretStore, SafeStorageLike } from './src/SecretStore';
 
 export default class DanaPlugin extends Plugin {
   settings: DanaSettings;
   journalDetector: JournalDetector;
+  secretStore: SecretStore;
   private ribbonIconEl: HTMLElement;
 
   async onload(): Promise<void> {
+    this.secretStore = new SecretStore(this.loadSafeStorage());
     await this.loadSettings();
 
     this.journalDetector = new JournalDetector();
@@ -92,11 +95,49 @@ export default class DanaPlugin extends Plugin {
     }
   }
 
+  private loadSafeStorage(): SafeStorageLike | null {
+    try {
+      // 'electron' is externalized in esbuild.config.mjs and provided by Obsidian's
+      // desktop runtime (manifest.json sets isDesktopOnly: true) — it isn't an npm
+      // dependency, so this is loaded dynamically rather than statically imported.
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      return (require('electron') as { safeStorage: SafeStorageLike }).safeStorage;
+    } catch {
+      return null;
+    }
+  }
+
   async loadSettings(): Promise<void> {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const raw = ((await this.loadData()) ?? {}) as Partial<DanaSettings> & { openaiKey?: string };
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, raw);
+
+    // Migrate a plaintext key from before encrypted storage existed.
+    const legacyPlaintextKey = raw.openaiKey;
+    if (legacyPlaintextKey && !this.settings.openaiKeyEncrypted) {
+      this.setOpenAIKey(legacyPlaintextKey);
+      delete (this.settings as { openaiKey?: string }).openaiKey;
+      await this.saveSettings();
+    }
   }
 
   async saveSettings(): Promise<void> {
     await this.saveData(this.settings);
+  }
+
+  setOpenAIKey(plaintext: string): void {
+    const encrypted = this.secretStore.encrypt(plaintext);
+    if (encrypted) {
+      this.settings.openaiKeyEncrypted = encrypted;
+      this.settings.openaiKeyEncryptionAvailable = true;
+    } else {
+      this.settings.openaiKeyEncrypted = plaintext;
+      this.settings.openaiKeyEncryptionAvailable = false;
+    }
+  }
+
+  getOpenAIKey(): string {
+    if (!this.settings.openaiKeyEncrypted) return '';
+    if (!this.settings.openaiKeyEncryptionAvailable) return this.settings.openaiKeyEncrypted;
+    return this.secretStore.decrypt(this.settings.openaiKeyEncrypted) ?? '';
   }
 }

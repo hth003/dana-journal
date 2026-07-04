@@ -3,7 +3,8 @@ export interface DanaSettings {
   maxContextEntries: number;
   ollamaHost: string;
   ollamaModel: string;
-  openaiKey: string;
+  openaiKeyEncrypted: string;
+  openaiKeyEncryptionAvailable: boolean;
   preferredProvider: 'ollama' | 'openai';
   onboarded: boolean;
 }
@@ -13,7 +14,8 @@ export const DEFAULT_SETTINGS: DanaSettings = {
   maxContextEntries: 7,
   ollamaHost: 'http://localhost:11434',
   ollamaModel: 'llama3.2',
-  openaiKey: '',
+  openaiKeyEncrypted: '',
+  openaiKeyEncryptionAvailable: false,
   preferredProvider: 'ollama',
   onboarded: false,
 };

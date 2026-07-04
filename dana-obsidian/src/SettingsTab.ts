@@ -135,15 +135,20 @@ export class DanaSettingsTab extends PluginSettingTab {
   }
 
   private renderOpenAISettings(containerEl: HTMLElement): void {
+    const encryptionAvailable = this.plugin.secretStore.isAvailable();
     new Setting(containerEl)
       .setName('OpenAI API key')
-      .setDesc('Stored in your vault\'s plugin data (.obsidian/plugins/dana-journal/data.json). Syncs if you use Obsidian Sync.')
+      .setDesc(
+        encryptionAvailable
+          ? 'Encrypted at rest using your OS keychain. Never stored in plain text.'
+          : "OS-level encryption isn't available on this device, so this is stored as plain text in the plugin's data.json."
+      )
       .addText(text => {
         text
           .setPlaceholder('sk-...')
-          .setValue(this.plugin.settings.openaiKey)
+          .setValue(this.plugin.getOpenAIKey())
           .onChange(async value => {
-            this.plugin.settings.openaiKey = value.trim();
+            this.plugin.setOpenAIKey(value.trim());
             await this.plugin.saveSettings();
           });
         text.inputEl.type = 'password';

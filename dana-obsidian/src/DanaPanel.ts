@@ -397,7 +397,8 @@ export class DanaPanel extends ItemView {
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   private resolveProvider(): AIProvider | null {
-    const { preferredProvider, ollamaHost, ollamaModel, openaiKey } = this.plugin.settings;
+    const { preferredProvider, ollamaHost, ollamaModel } = this.plugin.settings;
+    const openaiKey = this.plugin.getOpenAIKey();
 
     if (preferredProvider === 'ollama') {
       return new OllamaProvider(ollamaHost, ollamaModel);
