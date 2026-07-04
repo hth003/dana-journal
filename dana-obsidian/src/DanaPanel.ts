@@ -4,7 +4,6 @@ import { VaultReader } from './VaultReader';
 import { ConversationStore } from './ConversationStore';
 import { PromptBuilder } from './PromptBuilder';
 import { ContextResolver } from './ContextResolver';
-import { JournalDetector } from './JournalDetector';
 import { OllamaProvider } from './providers/OllamaProvider';
 import { OpenAIProvider } from './providers/OpenAIProvider';
 import type { AIProvider, ChatMessage } from './providers/AIProvider';
@@ -23,13 +22,14 @@ export class DanaPanel extends ItemView {
   private conversationStore: ConversationStore;
   private promptBuilder: PromptBuilder;
   private contextResolver: ContextResolver;
+  private activeIsJournalNote = true;
 
   constructor(leaf: WorkspaceLeaf, private plugin: DanaPlugin) {
     super(leaf);
     this.vaultReader = new VaultReader(this.app);
     this.conversationStore = new ConversationStore(this.app);
     this.promptBuilder = new PromptBuilder();
-    this.contextResolver = new ContextResolver(this.vaultReader, new JournalDetector());
+    this.contextResolver = new ContextResolver(this.vaultReader, this.plugin.journalDetector);
   }
 
   getViewType(): string { return VIEW_TYPE_DANA; }
@@ -43,7 +43,28 @@ export class DanaPanel extends ItemView {
       this.messages = await this.conversationStore.loadToday(this.plugin.settings.journalFolder);
       this.state = this.messages.length > 0 ? DanaState.CONVERSATION : DanaState.IDLE;
     }
+    await this.refreshActiveNoteStatus();
     this.render();
+
+    this.registerEvent(
+      this.app.workspace.on('active-leaf-change', () => {
+        this.refreshActiveNoteStatus().then(() => {
+          if (this.state === DanaState.IDLE) this.render();
+        });
+      })
+    );
+  }
+
+  private async refreshActiveNoteStatus(): Promise<void> {
+    const activeFile = this.app.workspace.getActiveFile();
+    const frontmatter = activeFile
+      ? this.app.metadataCache.getFileCache(activeFile)?.frontmatter ?? null
+      : null;
+    this.activeIsJournalNote = this.plugin.journalDetector.isJournalNote(
+      activeFile,
+      this.plugin.settings.journalFolder,
+      frontmatter
+    );
   }
 
   async onClose(): Promise<void> {}
@@ -109,7 +130,12 @@ export class DanaPanel extends ItemView {
   }
 
   private renderIdle(el: HTMLElement): void {
-    const greeting = el.createDiv({ cls: 'dana-greeting', text: this.timeGreeting() });
+    const greeting = el.createDiv({
+      cls: 'dana-greeting',
+      text: this.activeIsJournalNote
+        ? this.timeGreeting()
+        : 'Open a journal note to reflect on today, or explore recent patterns.',
+    });
 
     const primaryBtn = el.createEl('button', {
       cls: 'dana-btn-primary',
@@ -128,7 +154,7 @@ export class DanaPanel extends ItemView {
   }
 
   private renderLoading(el: HTMLElement): void {
-    el.createDiv({ cls: 'dana-loading-msg', text: 'Dana is reading your note...' });
+    el.createDiv({ cls: 'dana-loading-msg', text: 'Dana is reading your recent notes...' });
     el.createDiv({ cls: 'dana-dots', text: '• • •' });
 
     const cancelBtn = el.createEl('button', { cls: 'dana-btn-secondary', text: 'Cancel' });

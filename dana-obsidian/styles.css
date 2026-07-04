@@ -327,3 +327,8 @@
 @container (max-width: 240px) {
   .dana-avatar { display: none; }
 }
+
+/* ── Ribbon passive state (active note isn't a journal entry) ────────── */
+.dana-ribbon-passive {
+  opacity: 0.5;
+}
